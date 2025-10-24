@@ -18,8 +18,8 @@ import java.util.Optional;
 @Slf4j
 @RequiredArgsConstructor
 public class UrlShortenerService {
-    private static final int DEFAULT_VALID_FOR_DAYS = 1;
-    private static final int MAX_COLLISION_RETRIES = 10;
+    public static final int DEFAULT_VALID_FOR_DAYS = 1;
+    public static final int MAX_COLLISION_RETRIES = 10;
 
     private static final String VALID_URL_REGEX = "^(https?://)?" +                                    // Optional protocol
             "[a-zA-Z0-9]([a-zA-Z0-9_-]*[a-zA-Z0-9])?" +        // First domain part (allows underscores)

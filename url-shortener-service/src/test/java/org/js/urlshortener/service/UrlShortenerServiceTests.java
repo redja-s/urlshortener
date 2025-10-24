@@ -16,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import static org.js.urlshortener.service.UrlShortenerService.MAX_COLLISION_RETRIES;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -40,6 +41,55 @@ public class UrlShortenerServiceTests {
     }
 
     @Test
+    public void test_validRequest_happyPath() {
+        // Given
+        final String validUrl = "https://example.com";
+        final Integer customDays = 7;
+        request.setUrl(validUrl);
+        request.setValidForDays(customDays);
+
+        UrlEntity mockEntity = UrlEntity.builder()
+                .shortCode("xyz789")
+                .longUrl(validUrl.toLowerCase())
+                .createdAt(LocalDateTime.now())
+                .expiresAt(LocalDateTime.now().plusDays(customDays))
+                .build();
+
+        PostUrlShortenResponse mockResponse = PostUrlShortenResponse.builder()
+                .shortCode("xyz789")
+                .originalUrl(validUrl.toLowerCase())
+                .expiresAt(LocalDateTime.now().plusDays(customDays))
+                .build();
+
+        // When - Mock the dependencies
+        when(urlShortenerRepository.findByShortCode(anyString())).thenReturn(Optional.empty());
+        when(urlMapper.mapToUrlEntity(any(), anyString(), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(mockEntity);
+        when(urlShortenerRepository.save(any(UrlEntity.class))).thenReturn(mockEntity);
+        when(urlMapper.mapUrlEntityToResponse(any(UrlEntity.class))).thenReturn(mockResponse);
+
+        // Execute the method
+        PostUrlShortenResponse response = urlShortenerService.shortenUrl(request);
+
+        // Then - Verify the business logic
+        assertEquals(customDays, request.getValidForDays(),
+                "validForDays should remain unchanged when provided");
+
+        // Verify that the mapper was called with the original custom value
+        verify(urlMapper).mapToUrlEntity(
+                argThat(req -> req.getValidForDays().equals(customDays)),
+                anyString(),
+                any(LocalDateTime.class),
+                any(LocalDateTime.class)
+        );
+
+        assertNotNull(response);
+        // Verifies .save called only once
+        verify(urlShortenerRepository, times(1)).save(any());
+        verify(urlShortenerRepository, atMost(MAX_COLLISION_RETRIES)).findByShortCode(any());
+    }
+
+    @Test
     public void test_invalidUrl_throwsException() {
         final String invalidUrl = "google/";
         request.setUrl(invalidUrl);
@@ -50,5 +100,50 @@ public class UrlShortenerServiceTests {
         verify(urlShortenerRepository, never()).save(any());
         verify(urlMapper, never()).mapToUrlEntity(any(), any(), any(), any());
         verify(urlMapper, never()).mapUrlEntityToResponse(any());
+    }
+
+    @Test
+    public void test_requestWithoutValidForDays_setsDefaultValue() {
+        // Given
+        final String validUrl = "https://google.com";
+        request.setUrl(validUrl);
+        request.setValidForDays(null); // Explicitly set to null
+
+        UrlEntity mockEntity = UrlEntity.builder()
+                .shortCode("abc123")
+                .longUrl(validUrl.toLowerCase())
+                .createdAt(LocalDateTime.now())
+                .expiresAt(LocalDateTime.now().plusDays(1))
+                .build();
+
+        PostUrlShortenResponse mockResponse = PostUrlShortenResponse.builder()
+                .shortCode("abc123")
+                .originalUrl(validUrl.toLowerCase())
+                .expiresAt(LocalDateTime.now().plusDays(1))
+                .build();
+
+        // When - Mock the dependencies
+        when(urlShortenerRepository.findByShortCode(anyString())).thenReturn(Optional.empty());
+        when(urlMapper.mapToUrlEntity(any(), anyString(), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(mockEntity);
+        when(urlShortenerRepository.save(any(UrlEntity.class))).thenReturn(mockEntity);
+        when(urlMapper.mapUrlEntityToResponse(any(UrlEntity.class))).thenReturn(mockResponse);
+
+        // Execute the method
+        PostUrlShortenResponse response = urlShortenerService.shortenUrl(request);
+
+        // Then - Verify the business logic
+        assertEquals(UrlShortenerService.DEFAULT_VALID_FOR_DAYS, request.getValidForDays(),
+                "validForDays should be set to default value when null");
+
+        // Verify that the mapper was called with the request that now has the default value
+        verify(urlMapper).mapToUrlEntity(
+                argThat(req -> req.getValidForDays().equals(UrlShortenerService.DEFAULT_VALID_FOR_DAYS)),
+                anyString(),
+                any(LocalDateTime.class),
+                any(LocalDateTime.class)
+        );
+
+        assertNotNull(response);
     }
 }
