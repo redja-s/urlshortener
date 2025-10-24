@@ -14,14 +14,19 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-import static org.js.urlshortener.utils.UrlValidator.isValidUrl;
-
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class UrlShortenerService {
     private static final int DEFAULT_VALID_FOR_DAYS = 1;
     private static final int MAX_COLLISION_RETRIES = 10;
+
+    private static final String VALID_URL_REGEX = "^(https?://)?" +                                    // Optional protocol
+            "[a-zA-Z0-9]([a-zA-Z0-9_-]*[a-zA-Z0-9])?" +        // First domain part (allows underscores)
+            "(\\.[a-zA-Z0-9]([a-zA-Z0-9_-]*[a-zA-Z0-9])?)*" +  // Additional domain parts
+            "\\.[a-zA-Z]{2,}" +                                 // TLD (at least 2 chars)
+            "(:[0-9]{1,5})?" +                                  // Optional port
+            "(/.*)?$";
 
     private UrlShortenerRepository urlShortenerRepository;
     private UrlMapper urlMapper;
@@ -87,5 +92,10 @@ public class UrlShortenerService {
         } while (true);
 
         return shortCode;
+    }
+                                        // Optional path
+
+    private boolean isValidUrl(final String url) {
+        return (url != null) && url.matches(VALID_URL_REGEX);
     }
 }
