@@ -5,6 +5,7 @@ import org.js.urlshortener.controller.model.PostUrlShortenRequest;
 import org.js.urlshortener.controller.model.PostUrlShortenResponse;
 import org.js.urlshortener.persistence.entity.UrlEntity;
 import org.js.urlshortener.repository.UrlShortenerRepository;
+import org.js.urlshortener.utils.UrlShortCodeUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +29,9 @@ public class UrlShortenerServiceTests {
 
     @Mock
     private UrlMapper urlMapper;
+
+    @Mock
+    private UrlShortCodeUtils urlShortCodeUtils;
 
     @InjectMocks
     private UrlShortenerService urlShortenerService;
@@ -93,9 +97,6 @@ public class UrlShortenerServiceTests {
         final String invalidUrl = "google/";
         request.setUrl(invalidUrl);
 
-//        assertThrows(InvalidUrlException.class,
-//                () -> urlShortenerService.shortenUrl(request));
-
         verify(urlShortenerRepository, never()).save(any());
         verify(urlMapper, never()).mapToUrlEntity(any(), any(), any(), any());
         verify(urlMapper, never()).mapUrlEntityToResponse(any());
@@ -144,5 +145,56 @@ public class UrlShortenerServiceTests {
         );
 
         assertNotNull(response);
+    }
+
+    @Test
+    public void test_generateExpiredShortCode() {
+        // Given
+        final String validUrl = "https://google.com";
+        request.setUrl(validUrl);
+
+        final String duplicateShortCode = "abc123";
+
+        UrlEntity expiredEntity = UrlEntity.builder()
+                .shortCode(duplicateShortCode)
+                .longUrl("randomUrl.com")
+                .createdAt(LocalDateTime.now())
+                .expiresAt(LocalDateTime.now().minusDays(10))
+                .build();
+
+        UrlEntity newEntity = UrlEntity.builder()
+                .shortCode(duplicateShortCode)
+                .longUrl(validUrl)
+                .createdAt(LocalDateTime.now())
+                .expiresAt(LocalDateTime.now().plusDays(1))
+                .build();
+
+        PostUrlShortenResponse mockResponse = PostUrlShortenResponse.builder()
+                .shortCode(duplicateShortCode)
+                .originalUrl(validUrl)
+                .expiresAt(LocalDateTime.now().plusDays(1))
+                .build();
+
+
+        when(urlShortenerRepository.findByShortCode(any()))
+                .thenReturn(Optional.of(expiredEntity));
+        when(urlMapper.mapToUrlEntity(any(), anyString(), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(newEntity);
+        when(urlShortenerRepository.save(any(UrlEntity.class))).thenReturn(newEntity);
+        when(urlMapper.mapUrlEntityToResponse(any(UrlEntity.class))).thenReturn(mockResponse);
+
+        PostUrlShortenResponse response = urlShortenerService.shortenUrl(request);
+
+        // Then - Verify the business logic
+        assertEquals(UrlShortenerService.DEFAULT_VALID_FOR_DAYS, request.getValidForDays());
+        assertEquals(validUrl, response.getOriginalUrl());
+
+        verify(urlShortenerRepository).delete(expiredEntity);
+
+        // Verify new entity was saved
+        verify(urlShortenerRepository).save(any(UrlEntity.class));
+
+        // Verify findByShortCode was called only once (expired code found immediately)
+        verify(urlShortenerRepository, times(1)).findByShortCode(duplicateShortCode);
     }
 }

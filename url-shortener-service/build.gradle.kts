@@ -1,3 +1,14 @@
+buildscript {
+	repositories {
+		mavenLocal()
+		mavenCentral()
+	}
+	dependencies {
+		classpath("org.postgresql:postgresql:42.7.2")
+		classpath("org.flywaydb:flyway-database-postgresql:10.12.0")
+	}
+}
+
 plugins {
 	java
 	id("org.springframework.boot") version "3.5.6"
@@ -45,4 +56,10 @@ dependencies {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+}
+
+flyway {
+	url = "jdbc:postgresql://localhost:5432/postgres"
+	user = "user"
+	password = "password"
 }

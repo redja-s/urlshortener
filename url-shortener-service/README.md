@@ -39,7 +39,6 @@ CREATE TABLE urls (
     long_url TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     expires_at TIMESTAMP,
-    INDEX idx_short_code (short_code),
-    INDEX idx_user_id (user_id)
+    INDEX idx_short_code (short_code)
 );
 ```

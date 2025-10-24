@@ -1,10 +1,7 @@
 package org.js.urlshortener.persistence.entity;
 
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,6 +19,7 @@ import java.time.LocalDateTime;
 public class UrlEntity {
     @Id
     @Column(name = "id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  // This tells JPA to use auto-generated ID
     private Long id;
 
     @Column(name = "short_code")
