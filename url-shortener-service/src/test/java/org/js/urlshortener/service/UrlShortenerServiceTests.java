@@ -17,9 +17,16 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.js.urlshortener.service.UrlShortenerService.MAX_COLLISION_RETRIES;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.atMost;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class UrlShortenerServiceTests {
@@ -182,6 +189,7 @@ public class UrlShortenerServiceTests {
                 .thenReturn(newEntity);
         when(urlShortenerRepository.save(any(UrlEntity.class))).thenReturn(newEntity);
         when(urlMapper.mapUrlEntityToResponse(any(UrlEntity.class))).thenReturn(mockResponse);
+        when(urlShortCodeUtils.generateShortCode()).thenReturn(duplicateShortCode);
 
         PostUrlShortenResponse response = urlShortenerService.shortenUrl(request);
 

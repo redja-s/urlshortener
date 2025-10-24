@@ -23,6 +23,7 @@ public class UrlShortenerService {
 
     private final UrlShortenerRepository urlShortenerRepository;
     private final UrlMapper urlMapper;
+    private final UrlShortCodeUtils urlShortCodeUtils;
 
     public PostUrlShortenResponse shortenUrl(final PostUrlShortenRequest urlShortenRequest) {
         final String urlToShorten = urlShortenRequest.getUrl().toLowerCase();
@@ -53,7 +54,7 @@ public class UrlShortenerService {
         int attempts = 0;
 
         do {
-            shortCode = UrlShortCodeUtils.generateShortCode();
+            shortCode = urlShortCodeUtils.generateShortCode();
             attempts++;
 
             if (attempts > MAX_COLLISION_RETRIES) {
