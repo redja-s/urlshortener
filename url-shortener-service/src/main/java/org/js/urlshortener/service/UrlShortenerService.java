@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.js.urlshortener.controller.mapper.UrlMapper;
 import org.js.urlshortener.controller.model.PostUrlShortenRequest;
 import org.js.urlshortener.controller.model.PostUrlShortenResponse;
-import org.js.urlshortener.exception.model.InvalidUrlException;
 import org.js.urlshortener.persistence.entity.UrlEntity;
 import org.js.urlshortener.repository.UrlShortenerRepository;
 import org.js.urlshortener.utils.UrlShortCodeUtils;
@@ -18,25 +17,15 @@ import java.util.Optional;
 @Slf4j
 @RequiredArgsConstructor
 public class UrlShortenerService {
+
     public static final int DEFAULT_VALID_FOR_DAYS = 1;
     public static final int MAX_COLLISION_RETRIES = 10;
 
-    private static final String VALID_URL_REGEX = "^(https?://)?" +                                    // Optional protocol
-            "[a-zA-Z0-9]([a-zA-Z0-9_-]*[a-zA-Z0-9])?" +        // First domain part (allows underscores)
-            "(\\.[a-zA-Z0-9]([a-zA-Z0-9_-]*[a-zA-Z0-9])?)*" +  // Additional domain parts
-            "\\.[a-zA-Z]{2,}" +                                 // TLD (at least 2 chars)
-            "(:[0-9]{1,5})?" +                                  // Optional port
-            "(/.*)?$";
-
-    private UrlShortenerRepository urlShortenerRepository;
-    private UrlMapper urlMapper;
+    private final UrlShortenerRepository urlShortenerRepository;
+    private final UrlMapper urlMapper;
 
     public PostUrlShortenResponse shortenUrl(final PostUrlShortenRequest urlShortenRequest) {
         final String urlToShorten = urlShortenRequest.getUrl().toLowerCase();
-
-        if(!isValidUrl(urlToShorten)) {
-            throw new InvalidUrlException();
-        }
 
         if (urlShortenRequest.getValidForDays() == null) {
             urlShortenRequest.setValidForDays(DEFAULT_VALID_FOR_DAYS);
@@ -92,10 +81,5 @@ public class UrlShortenerService {
         } while (true);
 
         return shortCode;
-    }
-                                        // Optional path
-
-    private boolean isValidUrl(final String url) {
-        return (url != null) && url.matches(VALID_URL_REGEX);
     }
 }
