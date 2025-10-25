@@ -33,7 +33,7 @@ public class UrlShortenerControllerTests {
     private ObjectMapper objectMapper;
 
     @Test
-    public void test_validUrl_201() throws Exception {
+    public void test_postShortenUrl_happyPath() throws Exception {
         final String validUrl = "google.com";
         final int validForDays = 7;
         final LocalDateTime expiresAt = LocalDateTime.now().plusDays(validForDays);
@@ -63,7 +63,7 @@ public class UrlShortenerControllerTests {
    }
 
     @Test
-    public void test_invalidUrl_400() throws Exception {
+    public void test_postShortenUrl_invalidUrl_400() throws Exception {
         final String invalidUrl = "example/";
         final int validForDays = 7;
 
@@ -81,7 +81,7 @@ public class UrlShortenerControllerTests {
     }
 
     @Test
-    public void test_invalidValidForDays_tooLow_returns400() throws Exception {
+    public void test_postShortenUrl_invalidValidForDays_tooLow_returns400() throws Exception {
         PostUrlShortenRequest request = PostUrlShortenRequest.builder()
                 .url("https://example.com")
                 .validForDays(0)  // Invalid: less than 1
@@ -95,7 +95,7 @@ public class UrlShortenerControllerTests {
     }
 
     @Test
-    public void test_invalidValidForDays_tooHigh_returns400() throws Exception {
+    public void test_postShortenUrl_invalidValidForDays_tooHigh_returns400() throws Exception {
         PostUrlShortenRequest request = PostUrlShortenRequest.builder()
                 .url("https://example.com")
                 .validForDays(366)  // Invalid: exceeds 365
@@ -109,7 +109,7 @@ public class UrlShortenerControllerTests {
     }
 
     @Test
-    public void test_blankUrl_returns400() throws Exception {
+    public void test_postShortenUrl_blankUrl_returns400() throws Exception {
         PostUrlShortenRequest request = PostUrlShortenRequest.builder()
                 .url("")  // Blank URL
                 .validForDays(7)
