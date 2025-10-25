@@ -1,7 +1,7 @@
 package org.js.urlshortener.controller.mapper;
 
 import org.js.urlshortener.controller.model.PostUrlShortenRequest;
-import org.js.urlshortener.controller.model.PostUrlShortenResponse;
+import org.js.urlshortener.controller.model.ShortenResponse;
 import org.js.urlshortener.persistence.entity.UrlEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -21,5 +21,6 @@ public interface UrlMapper {
     @Mapping(target = "shortCode", source = "entity.shortCode")
     @Mapping(target = "originalUrl", source = "entity.longUrl")
     @Mapping(target = "expiresAt", source = "entity.expiresAt")
-    PostUrlShortenResponse mapUrlEntityToResponse(UrlEntity entity);
+    @Mapping(target = "createdAt", source = "entity.createdAt")
+    ShortenResponse mapUrlEntityToResponse(UrlEntity entity);
 }

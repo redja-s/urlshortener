@@ -11,8 +11,9 @@ import java.time.LocalDateTime;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class PostUrlShortenResponse {
+public class ShortenResponse {
     private String shortCode;
     private String originalUrl;
     private LocalDateTime expiresAt;
+    private LocalDateTime createdAt;
 }

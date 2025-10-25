@@ -4,7 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.js.urlshortener.controller.mapper.UrlMapper;
 import org.js.urlshortener.controller.model.PostUrlShortenRequest;
-import org.js.urlshortener.controller.model.PostUrlShortenResponse;
+import org.js.urlshortener.controller.model.ShortenResponse;
+import org.js.urlshortener.exception.model.UrlEntityNotFoundException;
 import org.js.urlshortener.persistence.entity.UrlEntity;
 import org.js.urlshortener.repository.UrlShortenerRepository;
 import org.js.urlshortener.utils.UrlShortCodeUtils;
@@ -25,7 +26,7 @@ public class UrlShortenerService {
     private final UrlMapper urlMapper;
     private final UrlShortCodeUtils urlShortCodeUtils;
 
-    public PostUrlShortenResponse shortenUrl(final PostUrlShortenRequest urlShortenRequest) {
+    public ShortenResponse shortenUrl(final PostUrlShortenRequest urlShortenRequest) {
         final String urlToShorten = urlShortenRequest.getUrl().toLowerCase();
 
         if (urlShortenRequest.getValidForDays() == null) {
@@ -47,6 +48,16 @@ public class UrlShortenerService {
 
         // Return response
         return urlMapper.mapUrlEntityToResponse(savedEntity);
+    }
+
+    public ShortenResponse getShortCodeDetails(final String shortCode) {
+        final Optional<UrlEntity> urlEntity = urlShortenerRepository.findByShortCode(shortCode);
+
+        if (urlEntity.isEmpty()) {
+            throw new UrlEntityNotFoundException();
+        }
+
+        return urlMapper.mapUrlEntityToResponse(urlEntity.get());
     }
 
     private String generateUniqueShortCode() {

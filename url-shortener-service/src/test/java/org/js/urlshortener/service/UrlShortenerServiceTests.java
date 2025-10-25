@@ -2,7 +2,8 @@ package org.js.urlshortener.service;
 
 import org.js.urlshortener.controller.mapper.UrlMapper;
 import org.js.urlshortener.controller.model.PostUrlShortenRequest;
-import org.js.urlshortener.controller.model.PostUrlShortenResponse;
+import org.js.urlshortener.controller.model.ShortenResponse;
+import org.js.urlshortener.exception.model.UrlEntityNotFoundException;
 import org.js.urlshortener.persistence.entity.UrlEntity;
 import org.js.urlshortener.repository.UrlShortenerRepository;
 import org.js.urlshortener.utils.UrlShortCodeUtils;
@@ -17,8 +18,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.js.urlshortener.service.UrlShortenerService.MAX_COLLISION_RETRIES;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -65,7 +65,7 @@ public class UrlShortenerServiceTests {
                 .expiresAt(LocalDateTime.now().plusDays(customDays))
                 .build();
 
-        PostUrlShortenResponse mockResponse = PostUrlShortenResponse.builder()
+        ShortenResponse mockResponse = ShortenResponse.builder()
                 .shortCode("xyz789")
                 .originalUrl(validUrl.toLowerCase())
                 .expiresAt(LocalDateTime.now().plusDays(customDays))
@@ -79,7 +79,7 @@ public class UrlShortenerServiceTests {
         when(urlMapper.mapUrlEntityToResponse(any(UrlEntity.class))).thenReturn(mockResponse);
 
         // Execute the method
-        PostUrlShortenResponse response = urlShortenerService.shortenUrl(request);
+        ShortenResponse response = urlShortenerService.shortenUrl(request);
 
         // Then - Verify the business logic
         assertEquals(customDays, request.getValidForDays(),
@@ -123,7 +123,7 @@ public class UrlShortenerServiceTests {
                 .expiresAt(LocalDateTime.now().plusDays(1))
                 .build();
 
-        PostUrlShortenResponse mockResponse = PostUrlShortenResponse.builder()
+        ShortenResponse mockResponse = ShortenResponse.builder()
                 .shortCode("abc123")
                 .originalUrl(validUrl.toLowerCase())
                 .expiresAt(LocalDateTime.now().plusDays(1))
@@ -137,7 +137,7 @@ public class UrlShortenerServiceTests {
         when(urlMapper.mapUrlEntityToResponse(any(UrlEntity.class))).thenReturn(mockResponse);
 
         // Execute the method
-        PostUrlShortenResponse response = urlShortenerService.shortenUrl(request);
+        ShortenResponse response = urlShortenerService.shortenUrl(request);
 
         // Then - Verify the business logic
         assertEquals(UrlShortenerService.DEFAULT_VALID_FOR_DAYS, request.getValidForDays(),
@@ -176,7 +176,7 @@ public class UrlShortenerServiceTests {
                 .expiresAt(LocalDateTime.now().plusDays(1))
                 .build();
 
-        PostUrlShortenResponse mockResponse = PostUrlShortenResponse.builder()
+        ShortenResponse mockResponse = ShortenResponse.builder()
                 .shortCode(duplicateShortCode)
                 .originalUrl(validUrl)
                 .expiresAt(LocalDateTime.now().plusDays(1))
@@ -191,7 +191,7 @@ public class UrlShortenerServiceTests {
         when(urlMapper.mapUrlEntityToResponse(any(UrlEntity.class))).thenReturn(mockResponse);
         when(urlShortCodeUtils.generateShortCode()).thenReturn(duplicateShortCode);
 
-        PostUrlShortenResponse response = urlShortenerService.shortenUrl(request);
+        ShortenResponse response = urlShortenerService.shortenUrl(request);
 
         // Then - Verify the business logic
         assertEquals(UrlShortenerService.DEFAULT_VALID_FOR_DAYS, request.getValidForDays());
@@ -204,5 +204,50 @@ public class UrlShortenerServiceTests {
 
         // Verify findByShortCode was called only once (expired code found immediately)
         verify(urlShortenerRepository, times(1)).findByShortCode(duplicateShortCode);
+    }
+
+    @Test
+    public void test_getShortCode_happyPath() {
+        final String validShortCode = "123abc";
+        final String longUrl = "google.com";
+        final LocalDateTime createdAt = LocalDateTime.now().minusDays(5);
+        final LocalDateTime expiresAt = createdAt.plusDays(10);
+
+        final UrlEntity urlEntity = UrlEntity.builder()
+                .id(100L)
+                .expiresAt(expiresAt)
+                .createdAt(createdAt)
+                .shortCode(validShortCode)
+                .longUrl(longUrl)
+                .build();
+
+        final ShortenResponse shortenResponse = ShortenResponse.builder()
+                .shortCode(validShortCode)
+                .originalUrl(longUrl)
+                .expiresAt(expiresAt)
+                .createdAt(createdAt)
+                .build();
+
+        when(urlShortenerRepository.findByShortCode(validShortCode))
+                .thenReturn(Optional.of(urlEntity));
+        when(urlMapper.mapUrlEntityToResponse(any()))
+                .thenReturn(shortenResponse);
+
+        final ShortenResponse getByShortCode = urlShortenerService.getShortCodeDetails(validShortCode);
+
+        assertEquals(validShortCode, getByShortCode.getShortCode());
+    }
+
+    @Test
+    public void test_getShortCode_notFoundExceptionThrown() {
+        final String validShortCode = "123abc";
+
+        when(urlShortenerRepository.findByShortCode(validShortCode))
+                .thenThrow(new UrlEntityNotFoundException());
+
+        assertThrows(UrlEntityNotFoundException.class,
+                () -> urlShortenerService.getShortCodeDetails(validShortCode));
+
+        verify(urlMapper, times(0)).mapUrlEntityToResponse(any());
     }
 }

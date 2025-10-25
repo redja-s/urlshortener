@@ -4,7 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.js.urlshortener.controller.model.PostUrlShortenRequest;
-import org.js.urlshortener.controller.model.PostUrlShortenResponse;
+import org.js.urlshortener.controller.model.ShortenResponse;
 import org.js.urlshortener.service.UrlShortenerService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +22,7 @@ public class UrlShortenerController {
     private final UrlShortenerService urlShortenerService;
 
     @PostMapping("/shorten")
-    public ResponseEntity<PostUrlShortenResponse> shortenUrl(
+    public ResponseEntity<ShortenResponse> shortenUrl(
             @Valid @RequestBody PostUrlShortenRequest requestBody
     ) {
         return ResponseEntity

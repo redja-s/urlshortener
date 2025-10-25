@@ -14,7 +14,7 @@ This service contains the following endpoints:
 POST /api/shorten
 
 Request: { "url": "https://example.com/very/long/url" }
-Response: { "shortUrl": "https://short.ly/abc123", "shortCode": "abc123" }
+Response: { "shortUrl": "https://short.ly/abc123", "shortCode": "abc123" , "createdAt": "..." }
 ```
 
 ```markdown

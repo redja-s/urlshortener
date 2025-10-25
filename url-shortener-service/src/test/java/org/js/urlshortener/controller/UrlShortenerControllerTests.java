@@ -2,7 +2,7 @@ package org.js.urlshortener.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.js.urlshortener.controller.model.PostUrlShortenRequest;
-import org.js.urlshortener.controller.model.PostUrlShortenResponse;
+import org.js.urlshortener.controller.model.ShortenResponse;
 import org.js.urlshortener.service.UrlShortenerService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +43,7 @@ public class UrlShortenerControllerTests {
                 .validForDays(validForDays)
                 .build();
 
-        PostUrlShortenResponse mockResponse = PostUrlShortenResponse.builder()
+        ShortenResponse mockResponse = ShortenResponse.builder()
                 .shortCode("xyz789")
                 .originalUrl(validUrl.toLowerCase())
                 .expiresAt(expiresAt)
