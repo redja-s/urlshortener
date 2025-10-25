@@ -35,4 +35,14 @@ public class UrlShortenerController {
                 .status(HttpStatus.OK)
                 .body(urlShortenerService.getShortCodeDetails(shortUrl));
     }
+
+    @DeleteMapping("/shorten/{shortCode}")
+    public ResponseEntity<Void> deleteShortUrl(
+            @PathVariable("shortCode") final String shortCode
+    ) {
+        urlShortenerService.deleteByShortCode(shortCode);
+        return ResponseEntity
+                .status(HttpStatus.NO_CONTENT)
+                .build();
+    }
 }

@@ -1,5 +1,6 @@
 package org.js.urlshortener.service;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.js.urlshortener.controller.mapper.UrlMapper;
@@ -58,6 +59,22 @@ public class UrlShortenerService {
         }
 
         return urlMapper.mapUrlEntityToResponse(urlEntity.get());
+    }
+
+    @Transactional
+    public void deleteByShortCode(String shortCode) {
+        log.info("Attempting to delete URL with short code: {}", shortCode);
+
+        // Check if it exists first
+        Optional<UrlEntity> urlEntity = urlShortenerRepository.findByShortCode(shortCode);
+
+        if (urlEntity.isEmpty()) {
+            log.warn("Short code not found: {}", shortCode);
+            throw new UrlEntityNotFoundException();
+        }
+
+        urlShortenerRepository.deleteByShortCode(shortCode);
+        log.info("Successfully deleted URL with short code: {}", shortCode);
     }
 
     private String generateUniqueShortCode() {

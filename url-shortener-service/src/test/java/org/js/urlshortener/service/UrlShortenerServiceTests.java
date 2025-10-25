@@ -250,4 +250,42 @@ public class UrlShortenerServiceTests {
 
         verify(urlMapper, times(0)).mapUrlEntityToResponse(any());
     }
+
+    @Test
+    public void test_deleteByShortCode_success() {
+        // Given
+        final String shortCode = "abc123";
+
+        UrlEntity existingEntity = UrlEntity.builder()
+                .shortCode(shortCode)
+                .longUrl("https://example.com")
+                .build();
+
+        when(urlShortenerRepository.findByShortCode(shortCode))
+                .thenReturn(Optional.of(existingEntity));
+
+        // When
+        urlShortenerService.deleteByShortCode(shortCode);
+
+        // Then
+        verify(urlShortenerRepository).findByShortCode(shortCode);
+        verify(urlShortenerRepository).deleteByShortCode(shortCode);
+    }
+
+    @Test
+    public void test_deleteByShortCode_notFound_throwsException() {
+        // Given
+        final String shortCode = "nonexistent";
+
+        when(urlShortenerRepository.findByShortCode(shortCode))
+                .thenReturn(Optional.empty());
+
+        // When & Then
+        assertThrows(UrlEntityNotFoundException.class, () ->
+                urlShortenerService.deleteByShortCode(shortCode)
+        );
+
+        verify(urlShortenerRepository).findByShortCode(shortCode);
+        verify(urlShortenerRepository, never()).deleteByShortCode(anyString());
+    }
 }

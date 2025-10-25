@@ -6,5 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface UrlShortenerRepository extends JpaRepository<UrlEntity, Long> {
-    Optional<UrlEntity> findByShortCode(String shortCode);
+    Optional<UrlEntity> findByShortCode(final String shortCode);
+
+    void deleteByShortCode(final String shortCode);
 }

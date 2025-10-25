@@ -11,14 +11,12 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.time.LocalDateTime;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -157,5 +155,29 @@ public class UrlShortenerControllerTests {
         mockMvc.perform(get("/api/shorten/" + validShortCode)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void test_deleteShortUrl_success_returns204() throws Exception {
+        final String shortCode = "abc123";
+
+        doNothing().when(urlShortenerService).deleteByShortCode(shortCode);
+
+        mockMvc.perform(delete("/api/shorten/" + shortCode))
+                .andExpect(status().isNoContent());
+
+        verify(urlShortenerService).deleteByShortCode(shortCode);
+    }
+
+    @Test
+    public void test_deleteShortUrl_notFound_returns404() throws Exception {
+        final String shortCode = "nonexistent";
+
+        doThrow(new UrlEntityNotFoundException())
+                .when(urlShortenerService).deleteByShortCode(shortCode);
+
+        mockMvc.perform(delete("/api/shorten/" + shortCode))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("No URL found"));
     }
 }
