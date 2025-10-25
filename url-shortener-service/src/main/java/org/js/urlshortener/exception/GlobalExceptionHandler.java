@@ -37,15 +37,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(UrlEntityNotFoundException.class)
-    public ResponseEntity<GenericErrorResponse> handleUrlEntityNotFoundException(
-            MethodArgumentNotValidException ex) {
-
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(error ->
-                errors.put(error.getField(), error.getDefaultMessage())
-        );
-
-        log.warn("URL Enity not found: {}", errors);
+    public ResponseEntity<GenericErrorResponse> handleUrlEntityNotFoundException() {
+        log.warn("URL Entity not found");
 
         GenericErrorResponse errorResponse = GenericErrorResponse.builder()
                 .message("No URL found")

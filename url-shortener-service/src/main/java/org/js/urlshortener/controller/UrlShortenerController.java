@@ -8,10 +8,7 @@ import org.js.urlshortener.controller.model.ShortenResponse;
 import org.js.urlshortener.service.UrlShortenerService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api")
@@ -23,10 +20,19 @@ public class UrlShortenerController {
 
     @PostMapping("/shorten")
     public ResponseEntity<ShortenResponse> shortenUrl(
-            @Valid @RequestBody PostUrlShortenRequest requestBody
+            @Valid @RequestBody final PostUrlShortenRequest requestBody
     ) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(urlShortenerService.shortenUrl(requestBody));
+    }
+
+    @GetMapping("/shorten/{shortUrl}")
+    public ResponseEntity<ShortenResponse> getShortUrlDetails(
+            @PathVariable("shortUrl") final String shortUrl
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(urlShortenerService.getShortCodeDetails(shortUrl));
     }
 }

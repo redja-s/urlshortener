@@ -3,6 +3,7 @@ package org.js.urlshortener.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.js.urlshortener.controller.model.PostUrlShortenRequest;
 import org.js.urlshortener.controller.model.ShortenResponse;
+import org.js.urlshortener.exception.model.UrlEntityNotFoundException;
 import org.js.urlshortener.service.UrlShortenerService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,11 +11,13 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.time.LocalDateTime;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -120,5 +123,39 @@ public class UrlShortenerControllerTests {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
+    public void test_getShortUrlDetails_happyPath() throws Exception {
+        final String validShortCode = "123abc";
+        final String longUrl = "google.com";
+        final LocalDateTime createdAt = LocalDateTime.now().minusDays(5);
+        final LocalDateTime expiresAt = createdAt.plusDays(10);
+
+        final ShortenResponse shortenResponse = ShortenResponse.builder()
+                .shortCode(validShortCode)
+                .originalUrl(longUrl)
+                .expiresAt(expiresAt)
+                .createdAt(createdAt)
+                .build();
+
+        when(urlShortenerService.getShortCodeDetails(any()))
+                .thenReturn(shortenResponse);
+
+        mockMvc.perform(get("/api/shorten/" + validShortCode)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void test_getShortUrlDetails_shortCodeNotFound_404() throws Exception {
+        final String validShortCode = "123abc";
+
+        when(urlShortenerService.getShortCodeDetails(any()))
+                .thenThrow(new UrlEntityNotFoundException());
+
+        mockMvc.perform(get("/api/shorten/" + validShortCode)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
     }
 }
