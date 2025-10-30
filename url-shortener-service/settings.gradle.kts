@@ -1,1 +1,1 @@
-rootProject.name = "urlshortener"
+rootProject.name = "url-shortener-service"
