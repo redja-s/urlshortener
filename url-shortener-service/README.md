@@ -42,3 +42,19 @@ CREATE TABLE urls (
     INDEX idx_short_code (short_code)
 );
 ```
+
+### Build Only the App
+```bash
+# Build Docker image
+podman build -t url-shortener:latest ./url-shortener-service
+
+# Run manually (requires external PostgreSQL)
+podman run -d \
+  --name url-shortener \
+  -p 8080:8080 \
+  -e SPRING_DATASOURCE_URL=jdbc:postgresql://host.containers.internal:5432/postgres \
+  -e SPRING_DATASOURCE_USERNAME=postgres \
+  -e SPRING_DATASOURCE_PASSWORD=postgres \
+  -e SPRING_JPA_HIBERNATE_DDL_AUTO=update \
+  url-shortener:latest
+```

@@ -1,11 +1,10 @@
 # Stage 1: Build the application
-FROM gradle:8.5-jdk21-alpine AS build
+FROM gradle:jdk21-alpine AS build
 
 WORKDIR /app
 
 # Copy Gradle files for dependency caching
 COPY build.gradle.kts settings.gradle.kts ./
-COPY gradle.properties* ./
 
 # Download dependencies (cached layer)
 RUN gradle dependencies --no-daemon || true
