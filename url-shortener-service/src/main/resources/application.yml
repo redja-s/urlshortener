@@ -14,3 +14,26 @@ spring:
 
     hibernate:
       use-new-id-generator-mappings: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+          - metrics
+
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
+
+  # Database health check
+    db:
+      enabled: true
