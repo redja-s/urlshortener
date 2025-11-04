@@ -57,7 +57,7 @@ public class GlobalExceptionHandler {
                 .build();
 
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
+                .status(HttpStatus.GONE)
                 .body(errorResponse);
     }
 }
