@@ -3,9 +3,9 @@ package org.js.urlshortener.service;
 import org.js.urlshortener.controller.mapper.UrlMapper;
 import org.js.urlshortener.controller.model.PostUrlShortenRequest;
 import org.js.urlshortener.controller.model.ShortenResponse;
-import org.js.urlshortener.exception.model.UrlEntityNotFoundException;
+import org.js.urlshortener.exception.model.UrlNotFoundException;
 import org.js.urlshortener.persistence.entity.UrlEntity;
-import org.js.urlshortener.repository.UrlShortenerRepository;
+import org.js.urlshortener.repository.UrlRepository;
 import org.js.urlshortener.utils.UrlShortCodeUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
 public class UrlShortenerServiceTests {
 
     @Mock
-    private UrlShortenerRepository urlShortenerRepository;
+    private UrlRepository urlRepository;
 
     @Mock
     private UrlMapper urlMapper;
@@ -72,10 +72,10 @@ public class UrlShortenerServiceTests {
                 .build();
 
         // When - Mock the dependencies
-        when(urlShortenerRepository.findByShortCode(anyString())).thenReturn(Optional.empty());
+        when(urlRepository.findByShortCode(anyString())).thenReturn(Optional.empty());
         when(urlMapper.mapToUrlEntity(any(), anyString(), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .thenReturn(mockEntity);
-        when(urlShortenerRepository.save(any(UrlEntity.class))).thenReturn(mockEntity);
+        when(urlRepository.save(any(UrlEntity.class))).thenReturn(mockEntity);
         when(urlMapper.mapUrlEntityToResponse(any(UrlEntity.class))).thenReturn(mockResponse);
 
         // Execute the method
@@ -95,8 +95,8 @@ public class UrlShortenerServiceTests {
 
         assertNotNull(response);
         // Verifies .save called only once
-        verify(urlShortenerRepository, times(1)).save(any());
-        verify(urlShortenerRepository, atMost(MAX_COLLISION_RETRIES)).findByShortCode(any());
+        verify(urlRepository, times(1)).save(any());
+        verify(urlRepository, atMost(MAX_COLLISION_RETRIES)).findByShortCode(any());
     }
 
     @Test
@@ -104,7 +104,7 @@ public class UrlShortenerServiceTests {
         final String invalidUrl = "google/";
         request.setUrl(invalidUrl);
 
-        verify(urlShortenerRepository, never()).save(any());
+        verify(urlRepository, never()).save(any());
         verify(urlMapper, never()).mapToUrlEntity(any(), any(), any(), any());
         verify(urlMapper, never()).mapUrlEntityToResponse(any());
     }
@@ -130,10 +130,10 @@ public class UrlShortenerServiceTests {
                 .build();
 
         // When - Mock the dependencies
-        when(urlShortenerRepository.findByShortCode(anyString())).thenReturn(Optional.empty());
+        when(urlRepository.findByShortCode(anyString())).thenReturn(Optional.empty());
         when(urlMapper.mapToUrlEntity(any(), anyString(), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .thenReturn(mockEntity);
-        when(urlShortenerRepository.save(any(UrlEntity.class))).thenReturn(mockEntity);
+        when(urlRepository.save(any(UrlEntity.class))).thenReturn(mockEntity);
         when(urlMapper.mapUrlEntityToResponse(any(UrlEntity.class))).thenReturn(mockResponse);
 
         // Execute the method
@@ -183,11 +183,11 @@ public class UrlShortenerServiceTests {
                 .build();
 
 
-        when(urlShortenerRepository.findByShortCode(any()))
+        when(urlRepository.findByShortCode(any()))
                 .thenReturn(Optional.of(expiredEntity));
         when(urlMapper.mapToUrlEntity(any(), anyString(), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .thenReturn(newEntity);
-        when(urlShortenerRepository.save(any(UrlEntity.class))).thenReturn(newEntity);
+        when(urlRepository.save(any(UrlEntity.class))).thenReturn(newEntity);
         when(urlMapper.mapUrlEntityToResponse(any(UrlEntity.class))).thenReturn(mockResponse);
         when(urlShortCodeUtils.generateShortCode()).thenReturn(duplicateShortCode);
 
@@ -197,13 +197,13 @@ public class UrlShortenerServiceTests {
         assertEquals(UrlShortenerService.DEFAULT_VALID_FOR_DAYS, request.getValidForDays());
         assertEquals(validUrl, response.getOriginalUrl());
 
-        verify(urlShortenerRepository).delete(expiredEntity);
+        verify(urlRepository).delete(expiredEntity);
 
         // Verify new entity was saved
-        verify(urlShortenerRepository).save(any(UrlEntity.class));
+        verify(urlRepository).save(any(UrlEntity.class));
 
         // Verify findByShortCode was called only once (expired code found immediately)
-        verify(urlShortenerRepository, times(1)).findByShortCode(duplicateShortCode);
+        verify(urlRepository, times(1)).findByShortCode(duplicateShortCode);
     }
 
     @Test
@@ -228,7 +228,7 @@ public class UrlShortenerServiceTests {
                 .createdAt(createdAt)
                 .build();
 
-        when(urlShortenerRepository.findByShortCode(validShortCode))
+        when(urlRepository.findByShortCode(validShortCode))
                 .thenReturn(Optional.of(urlEntity));
         when(urlMapper.mapUrlEntityToResponse(any()))
                 .thenReturn(shortenResponse);
@@ -242,10 +242,10 @@ public class UrlShortenerServiceTests {
     public void test_getShortCode_notFoundExceptionThrown() {
         final String validShortCode = "123abc";
 
-        when(urlShortenerRepository.findByShortCode(validShortCode))
-                .thenThrow(new UrlEntityNotFoundException());
+        when(urlRepository.findByShortCode(validShortCode))
+                .thenThrow(new UrlNotFoundException());
 
-        assertThrows(UrlEntityNotFoundException.class,
+        assertThrows(UrlNotFoundException.class,
                 () -> urlShortenerService.getShortCodeDetails(validShortCode));
 
         verify(urlMapper, times(0)).mapUrlEntityToResponse(any());
@@ -261,15 +261,15 @@ public class UrlShortenerServiceTests {
                 .longUrl("https://example.com")
                 .build();
 
-        when(urlShortenerRepository.findByShortCode(shortCode))
+        when(urlRepository.findByShortCode(shortCode))
                 .thenReturn(Optional.of(existingEntity));
 
         // When
         urlShortenerService.deleteByShortCode(shortCode);
 
         // Then
-        verify(urlShortenerRepository).findByShortCode(shortCode);
-        verify(urlShortenerRepository).deleteByShortCode(shortCode);
+        verify(urlRepository).findByShortCode(shortCode);
+        verify(urlRepository).deleteByShortCode(shortCode);
     }
 
     @Test
@@ -277,15 +277,15 @@ public class UrlShortenerServiceTests {
         // Given
         final String shortCode = "nonexistent";
 
-        when(urlShortenerRepository.findByShortCode(shortCode))
+        when(urlRepository.findByShortCode(shortCode))
                 .thenReturn(Optional.empty());
 
         // When & Then
-        assertThrows(UrlEntityNotFoundException.class, () ->
+        assertThrows(UrlNotFoundException.class, () ->
                 urlShortenerService.deleteByShortCode(shortCode)
         );
 
-        verify(urlShortenerRepository).findByShortCode(shortCode);
-        verify(urlShortenerRepository, never()).deleteByShortCode(anyString());
+        verify(urlRepository).findByShortCode(shortCode);
+        verify(urlRepository, never()).deleteByShortCode(anyString());
     }
 }

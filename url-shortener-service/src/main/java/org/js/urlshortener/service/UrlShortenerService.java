@@ -6,9 +6,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.js.urlshortener.controller.mapper.UrlMapper;
 import org.js.urlshortener.controller.model.PostUrlShortenRequest;
 import org.js.urlshortener.controller.model.ShortenResponse;
-import org.js.urlshortener.exception.model.UrlEntityNotFoundException;
+import org.js.urlshortener.exception.model.UrlNotFoundException;
 import org.js.urlshortener.persistence.entity.UrlEntity;
-import org.js.urlshortener.repository.UrlShortenerRepository;
+import org.js.urlshortener.repository.UrlRepository;
 import org.js.urlshortener.utils.UrlShortCodeUtils;
 import org.springframework.stereotype.Service;
 
@@ -23,7 +23,7 @@ public class UrlShortenerService {
     public static final int DEFAULT_VALID_FOR_DAYS = 1;
     public static final int MAX_COLLISION_RETRIES = 10;
 
-    private final UrlShortenerRepository urlShortenerRepository;
+    private final UrlRepository urlRepository;
     private final UrlMapper urlMapper;
     private final UrlShortCodeUtils urlShortCodeUtils;
 
@@ -44,7 +44,7 @@ public class UrlShortenerService {
         // Create and save URL entity using MapStruct
         UrlEntity urlEntity = urlMapper.mapToUrlEntity(urlShortenRequest, shortCode, createdAt, expiresAt);
 
-        UrlEntity savedEntity = urlShortenerRepository.save(urlEntity);
+        UrlEntity savedEntity = urlRepository.save(urlEntity);
         log.info("Created short URL: {} -> {}", shortCode, urlToShorten);
 
         // Return response
@@ -52,10 +52,10 @@ public class UrlShortenerService {
     }
 
     public ShortenResponse getShortCodeDetails(final String shortCode) {
-        final Optional<UrlEntity> urlEntity = urlShortenerRepository.findByShortCode(shortCode);
+        final Optional<UrlEntity> urlEntity = urlRepository.findByShortCode(shortCode);
 
         if (urlEntity.isEmpty()) {
-            throw new UrlEntityNotFoundException();
+            throw new UrlNotFoundException();
         }
 
         return urlMapper.mapUrlEntityToResponse(urlEntity.get());
@@ -66,14 +66,14 @@ public class UrlShortenerService {
         log.info("Attempting to delete URL with short code: {}", shortCode);
 
         // Check if it exists first
-        Optional<UrlEntity> urlEntity = urlShortenerRepository.findByShortCode(shortCode);
+        Optional<UrlEntity> urlEntity = urlRepository.findByShortCode(shortCode);
 
         if (urlEntity.isEmpty()) {
             log.warn("Short code not found: {}", shortCode);
-            throw new UrlEntityNotFoundException();
+            throw new UrlNotFoundException();
         }
 
-        urlShortenerRepository.deleteByShortCode(shortCode);
+        urlRepository.deleteByShortCode(shortCode);
         log.info("Successfully deleted URL with short code: {}", shortCode);
     }
 
@@ -91,7 +91,7 @@ public class UrlShortenerService {
             }
 
             // Check if code exists and is still valid
-            Optional<UrlEntity> existingUrl = urlShortenerRepository.findByShortCode(shortCode);
+            Optional<UrlEntity> existingUrl = urlRepository.findByShortCode(shortCode);
 
             if (existingUrl.isEmpty()) {
                 // Code doesn't exist, we can use it
@@ -100,7 +100,7 @@ public class UrlShortenerService {
 
             if (existingUrl.get().getExpiresAt().isBefore(LocalDateTime.now())) {
                 // Code exists but is expired, delete it and reuse
-                urlShortenerRepository.delete(existingUrl.get());
+                urlRepository.delete(existingUrl.get());
                 log.info("Reusing expired short code: {}", shortCode);
                 break;
             }

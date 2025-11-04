@@ -1,8 +1,9 @@
-package org.js.urlshortener.exception;
+package org.js.redirect.exception;
 
 import lombok.extern.slf4j.Slf4j;
-import org.js.urlshortener.exception.model.GenericErrorResponse;
-import org.js.urlshortener.exception.model.UrlNotFoundException;
+import org.js.redirect.exception.model.GenericErrorResponse;
+import org.js.redirect.exception.model.UrlExpiredException;
+import org.js.redirect.exception.model.UrlNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -37,7 +38,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(UrlNotFoundException.class)
-    public ResponseEntity<GenericErrorResponse> handleUrlEntityNotFoundException() {
+    public ResponseEntity<GenericErrorResponse> handleUrlNotFoundException() {
         log.warn("URL Entity not found");
 
         GenericErrorResponse errorResponse = GenericErrorResponse.builder()
@@ -46,6 +47,17 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
+                .body(errorResponse);
+    }
+
+    @ExceptionHandler(UrlExpiredException.class)
+    public ResponseEntity<GenericErrorResponse> handleUrlExpiredException() {
+        GenericErrorResponse errorResponse = GenericErrorResponse.builder()
+                .message("URL Expired")
+                .build();
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
                 .body(errorResponse);
     }
 }

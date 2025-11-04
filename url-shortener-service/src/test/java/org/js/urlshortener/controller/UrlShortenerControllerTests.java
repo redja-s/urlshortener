@@ -3,7 +3,7 @@ package org.js.urlshortener.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.js.urlshortener.controller.model.PostUrlShortenRequest;
 import org.js.urlshortener.controller.model.ShortenResponse;
-import org.js.urlshortener.exception.model.UrlEntityNotFoundException;
+import org.js.urlshortener.exception.model.UrlNotFoundException;
 import org.js.urlshortener.service.UrlShortenerService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -150,7 +150,7 @@ public class UrlShortenerControllerTests {
         final String validShortCode = "123abc";
 
         when(urlShortenerService.getShortCodeDetails(any()))
-                .thenThrow(new UrlEntityNotFoundException());
+                .thenThrow(new UrlNotFoundException());
 
         mockMvc.perform(get("/api/shorten/" + validShortCode)
                         .contentType(MediaType.APPLICATION_JSON))
@@ -173,7 +173,7 @@ public class UrlShortenerControllerTests {
     public void test_deleteShortUrl_notFound_returns404() throws Exception {
         final String shortCode = "nonexistent";
 
-        doThrow(new UrlEntityNotFoundException())
+        doThrow(new UrlNotFoundException())
                 .when(urlShortenerService).deleteByShortCode(shortCode);
 
         mockMvc.perform(delete("/api/shorten/" + shortCode))
