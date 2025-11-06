@@ -1,0 +1,34 @@
+urlShortener:
+  enabled: true
+  name: url-shortener
+  replicaCount: 2
+
+# PostgreSQL configuration
+postgresql:
+  enabled: true
+  image:
+    repository: postgres
+    tag: "16-alpine"
+    pullPolicy: IfNotPresent
+  
+  auth:
+    database: urlshortener
+    username: postgres
+    password: postgres
+  
+  persistence:
+    enabled: true
+    size: 1Gi
+    storageClass: standard
+  
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  
+  service:
+    type: ClusterIP
+    port: 5432

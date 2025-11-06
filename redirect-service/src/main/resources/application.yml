@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: "redirect-service"
+
+  datasource:
+    url: "jdbc:postgresql://localhost:5432/postgres"
+    username: "user"
+    password: "password"
+
+  jpa:
+    properties:
+      hibernate:
+        dialect: "org.hibernate.dialect.PostgreSQLDialect"
+
+    hibernate:
+      use-new-id-generator-mappings: false
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password:
+      timeout: 2000ms
+
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 2
+          max-wait: -1ms
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+          - metrics
+
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
+
+    # Database health check
+    db:
+      enabled: true
+

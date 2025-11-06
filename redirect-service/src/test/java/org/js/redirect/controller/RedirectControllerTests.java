@@ -16,9 +16,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-
 @WebMvcTest(controllers = RedirectController.class)
 public class RedirectControllerTests {
+
     @MockitoBean
     private RedirectService redirectService;
 
@@ -28,7 +28,7 @@ public class RedirectControllerTests {
     private final String validShortCode = "123abc";
 
     @Test
-    public void test_redirect_validShortCode() throws Exception {
+    public void test_redirect_validShortCodeReturns301() throws Exception {
         final String longUrl = "https://google.com";
 
         when(redirectService.getLongUrl(validShortCode))

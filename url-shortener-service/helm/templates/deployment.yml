@@ -1,0 +1,73 @@
+{{- if .Values.urlShortener.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.urlShortener.name }}
+  labels:
+    app: {{ .Values.urlShortener.name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.urlShortener.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.urlShortener.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.urlShortener.name }}
+    spec:
+      containers:
+      - name: {{ .Values.urlShortener.name }}
+        image: {{ .Values.urlShortener.image.repository }}:{{ .Values.urlShortener.image.tag }}
+        imagePullPolicy: {{ .Values.urlShortener.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.urlShortener.service.targetPort }}
+          name: http
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgres-service:{{ .Values.postgresql.service.port }}/{{ .Values.postgresql.auth.database }}"
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: password
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: {{ .Values.urlShortener.springBoot.jpa.hibernateDdlAuto }}
+        - name: SPRING_PROFILES_ACTIVE
+          value: {{ .Values.urlShortener.springBoot.profiles }}
+        resources:
+          {{- toYaml .Values.urlShortener.resources | nindent 10 }}
+        {{- if .Values.urlShortener.startupProbe.enabled }}
+        startupProbe:
+          httpGet:
+            path: {{ .Values.urlShortener.startupProbe.path }}
+            port: {{ .Values.urlShortener.service.targetPort }}
+          initialDelaySeconds: {{ .Values.urlShortener.startupProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.urlShortener.startupProbe.periodSeconds }}
+          failureThreshold: {{ .Values.urlShortener.startupProbe.failureThreshold }}
+        {{- end }}
+        {{- if .Values.urlShortener.livenessProbe.enabled }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.urlShortener.livenessProbe.path }}
+            port: {{ .Values.urlShortener.service.targetPort }}
+          initialDelaySeconds: {{ .Values.urlShortener.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.urlShortener.livenessProbe.periodSeconds }}
+          failureThreshold: {{ .Values.urlShortener.livenessProbe.failureThreshold }}
+        {{- end }}
+        {{- if .Values.urlShortener.readinessProbe.enabled }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.urlShortener.readinessProbe.path }}
+            port: {{ .Values.urlShortener.service.targetPort }}
+          initialDelaySeconds: {{ .Values.urlShortener.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.urlShortener.readinessProbe.periodSeconds }}
+          failureThreshold: {{ .Values.urlShortener.readinessProbe.failureThreshold }}
+        {{- end }}
+{{- end }}

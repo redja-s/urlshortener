@@ -1,20 +1,8 @@
-buildscript {
-	repositories {
-		mavenLocal()
-		mavenCentral()
-	}
-	dependencies {
-		classpath("org.postgresql:postgresql:42.7.2")
-		classpath("org.flywaydb:flyway-database-postgresql:10.12.0")
-	}
-}
-
 plugins {
 	java
 	id("org.springframework.boot") version "3.5.6"
 	id("io.spring.dependency-management") version "1.1.7"
 	id("io.freefair.lombok") version "8.4"
-	id("org.flywaydb.flyway") version "10.10.0"
 }
 
 group = "org.js"
