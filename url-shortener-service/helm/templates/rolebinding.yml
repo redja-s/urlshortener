@@ -1,0 +1,17 @@
+{{- if .Values.urlShortener.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Values.urlShortener.name }}-rolebinding
+  namespace: {{ .Values.global.serviceNamespace }}
+  labels:
+    app: {{ .Values.urlShortener.name }}
+subjects:
+- kind: ServiceAccount
+  name: {{ .Values.urlShortener.name }}-sa
+  namespace: {{ .Values.global.serviceNamespace }}
+roleRef:
+  kind: Role
+  name: {{ .Values.urlShortener.name }}-role
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}

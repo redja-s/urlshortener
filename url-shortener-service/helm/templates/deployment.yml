@@ -26,48 +26,54 @@ spec:
           name: http
         env:
         - name: SPRING_DATASOURCE_URL
-          value: "jdbc:postgresql://postgres-service:{{ .Values.postgresql.service.port }}/{{ .Values.postgresql.auth.database }}"
+          value: {{ .Values.global.db.urlShortenerValue }}
         - name: SPRING_DATASOURCE_USERNAME
           valueFrom:
             secretKeyRef:
-              name: postgres-secret
+              name: {{ .Values.urlShortener.secrets.database }}
               key: username
         - name: SPRING_DATASOURCE_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: postgres-secret
+              name: {{ .Values.urlShortener.secrets.database }}
               key: password
         - name: SPRING_JPA_HIBERNATE_DDL_AUTO
           value: {{ .Values.urlShortener.springBoot.jpa.hibernateDdlAuto }}
         - name: SPRING_PROFILES_ACTIVE
           value: {{ .Values.urlShortener.springBoot.profiles }}
+        
+        #Logging Configuration
+        - name: LOGGING_LEVEL_ROOT
+          value: {{ .Values.global.defaultRootLoggingLevel | default "INFO" }}
+        - name: LOGGING_LEVEL_APP
+          value: {{ coalesce .Values.urlShortener.logging.level.app .Values.global.defaultRootLoggingLevel "INFO" }}
         resources:
           {{- toYaml .Values.urlShortener.resources | nindent 10 }}
-        {{- if .Values.urlShortener.startupProbe.enabled }}
+        {{- if .Values.global.startupProbe.enabled }}
         startupProbe:
           httpGet:
-            path: {{ .Values.urlShortener.startupProbe.path }}
+            path: {{ .Values.global.startupProbe.path }}
             port: {{ .Values.urlShortener.service.targetPort }}
-          initialDelaySeconds: {{ .Values.urlShortener.startupProbe.initialDelaySeconds }}
-          periodSeconds: {{ .Values.urlShortener.startupProbe.periodSeconds }}
-          failureThreshold: {{ .Values.urlShortener.startupProbe.failureThreshold }}
+          initialDelaySeconds: {{ .Values.global.startupProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.global.startupProbe.periodSeconds }}
+          failureThreshold: {{ .Values.global.startupProbe.failureThreshold }}
         {{- end }}
-        {{- if .Values.urlShortener.livenessProbe.enabled }}
+        {{- if .Values.global.livenessProbe.enabled }}
         livenessProbe:
           httpGet:
-            path: {{ .Values.urlShortener.livenessProbe.path }}
+            path: {{ .Values.global.livenessProbe.path }}
             port: {{ .Values.urlShortener.service.targetPort }}
-          initialDelaySeconds: {{ .Values.urlShortener.livenessProbe.initialDelaySeconds }}
-          periodSeconds: {{ .Values.urlShortener.livenessProbe.periodSeconds }}
-          failureThreshold: {{ .Values.urlShortener.livenessProbe.failureThreshold }}
+          initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.global.livenessProbe.periodSeconds }}
+          failureThreshold: {{ .Values.global.livenessProbe.failureThreshold }}
         {{- end }}
-        {{- if .Values.urlShortener.readinessProbe.enabled }}
+        {{- if .Values.global.readinessProbe.enabled }}
         readinessProbe:
           httpGet:
-            path: {{ .Values.urlShortener.readinessProbe.path }}
+            path: {{ .Values.global.readinessProbe.path }}
             port: {{ .Values.urlShortener.service.targetPort }}
-          initialDelaySeconds: {{ .Values.urlShortener.readinessProbe.initialDelaySeconds }}
-          periodSeconds: {{ .Values.urlShortener.readinessProbe.periodSeconds }}
-          failureThreshold: {{ .Values.urlShortener.readinessProbe.failureThreshold }}
+          initialDelaySeconds: {{ .Values.global.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.global.readinessProbe.periodSeconds }}
+          failureThreshold: {{ .Values.global.readinessProbe.failureThreshold }}
         {{- end }}
 {{- end }}

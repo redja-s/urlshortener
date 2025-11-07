@@ -1,0 +1,19 @@
+{{- if .Values.urlShortener.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.urlShortener.name }}-service
+  labels:
+    app: {{ .Values.urlShortener.name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+spec:
+  selector:
+    app: {{ .Values.urlShortener.name }}
+  ports:
+  - port: {{ .Values.urlShortener.service.port }}
+    targetPort: {{ .Values.urlShortener.service.targetPort }}
+    protocol: TCP
+    name: http
+  type: {{ .Values.urlShortener.service.type }}
+{{- end }}

@@ -1,7 +1,8 @@
 
 # Global settings
 global:
-  namespace: default
+  microserviceNamespace: dev
+  defaultLoggingLevel: INFO
 
 # PostgreSQL configuration
 postgresql:

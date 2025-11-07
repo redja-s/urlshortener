@@ -1,0 +1,22 @@
+{{- if .Values.urlShortener.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Values.urlShortener.name }}-role
+  namespace: {{ .Values.global.serviceNamespace }}
+  labels:
+    app: {{ .Values.urlShortener.name }}
+rules:
+# Allow reading ConfigMaps (if app needs dynamic config)
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "watch"]
+# Allow reading Secrets (if app needs dynamic secrets)
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list"]
+# Allow reading Services (for service discovery)
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["get", "list"]
+{{- end }}

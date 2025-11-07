@@ -1,11 +1,74 @@
+global:
+  serviceNamespace: dev
+  defaultRootLoggingLevel: INFO
+  defaultAppLoggingLevel: INFO
+
+  db:
+    urlShortenerValue: "jdbc:postgresql://postgres-service.postgres.svc.cluster.local:5432/urlshortener"
+
+  # Health checks
+  livenessProbe:
+    enabled: true
+    path: /actuator/health/liveness
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    failureThreshold: 3
+  
+  readinessProbe:
+    enabled: true
+    path: /actuator/health/readiness
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    failureThreshold: 2
+  
+  startupProbe:
+    enabled: true
+    path: /actuator/health/liveness
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    failureThreshold: 12
+
 urlShortener:
   enabled: true
   name: url-shortener
   replicaCount: 2
 
+  secrets:
+    database: url-shortener-service-db-secret
+
+  logging:
+    level:
+      app: ""  # Will use global.defaultAppLoggingLevel
+
+  image:
+    repository: url-shortener
+    tag: latest
+    pullPolicy: Never  # Use IfNotPresent for registry images
+  
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  
+  # Spring Boot configuration
+  springBoot:
+    profiles: prod
+    jpa:
+      hibernateDdlAuto: update
+
 # PostgreSQL configuration
 postgresql:
   enabled: true
+  namespace: postgres
+  name: postgres
   image:
     repository: postgres
     tag: "16-alpine"
@@ -30,5 +93,4 @@ postgresql:
       cpu: "500m"
   
   service:
-    type: ClusterIP
     port: 5432

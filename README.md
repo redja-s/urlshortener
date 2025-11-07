@@ -1,0 +1,38 @@
+# Setup for running application stack onto minikube cluster
+
+All commands below assume the user is on the root directory
+
+## Step-by-step
+
+### Deployment Steps
+
+#### (1) Deploy Postgresql
+
+1. (Optional) Render & validate postgresql: `helm template minikube-setup/shared-services/postgresql -f values.yml`
+2. Deploy postgres into minikube: ` helm upgrade --install postgres minikube-setup/shared-services/postgresql -f minikube-setup/values.yml --namespace postgres`
+
+#### (2) Create database + users
+
+1. Run the setup SQL file onto the postgres pod: `kubectl exec -i postgres-0 -n postgres -- psql -U postgres -d urlshortener < ./minikube-setup/shared-services/postgresql/setup/create-users.sql`
+
+#### (3) Prepare secrets for services
+
+1. Create secret for url-shortener
+```bash
+kubectl create secret generic url-shortener-service-db-secret \
+  --from-literal=username=shortener_user \
+  --from-literal=password=shortener_secure_password \
+  --namespace dev
+```
+2. Create secret for redirect-service
+```bash
+kubectl create secret generic redirect-service-db-secret \
+  --from-literal=username=redirect_user \
+  --from-literal=password=redirect_secure_password \
+  --namespace dev
+```
+
+#### (4) Deploy url-shortener-service
+
+1. `kubectl create namespace dev`
+2. `helm upgrade --install url-shortener-service url-shortener-service/helm -f minikube-setup/values.yml --namespace dev`

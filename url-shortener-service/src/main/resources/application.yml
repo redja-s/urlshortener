@@ -3,9 +3,9 @@ spring:
     name: "url-shortener-service"
 
   datasource:
-    url: "jdbc:postgresql://localhost:5432/postgres"
-    username: "user"
-    password: "password"
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/urlshortener}
+    username: ${SPRING_DATASOURCE_USERNAME:user}
+    password: ${SPRING_DATASOURCE_PASSWORD:password}
 
   jpa:
     properties:
@@ -37,3 +37,7 @@ management:
   # Database health check
     db:
       enabled: true
+
+logging:
+level:
+  root: ${LOGGING_LEVEL_ROOT:INFO}  # Default root level, overridable by env var
