@@ -8,12 +8,12 @@ All commands below assume the user is on the root directory
 
 #### (1) Deploy Postgresql
 
-1. (Optional) Render & validate postgresql: `helm template minikube-setup/shared-services/postgresql -f values.yml`
-2. Deploy postgres into minikube: ` helm upgrade --install postgres minikube-setup/shared-services/postgresql -f minikube-setup/values.yml --namespace postgres`
+1. (Optional) Render & validate postgresql: `helm template minikube-setup/postgresql -f values.yml`
+2. Deploy postgres into minikube: ` helm upgrade --install postgres minikube-setup/postgresql -f minikube-setup/values.yml --namespace postgres`
 
 #### (2) Create database + users
 
-1. Run the setup SQL file onto the postgres pod: `kubectl exec -i postgres-0 -n postgres -- psql -U postgres -d urlshortener < ./minikube-setup/shared-services/postgresql/setup/create-users.sql`
+1. Run the setup SQL file onto the postgres pod: `kubectl exec -i postgres-0 -n postgres -- psql -U postgres -d urlshortener < ./minikube-setup//postgresql/setup/create-users.sql`
 
 #### (3) Prepare secrets for services
 

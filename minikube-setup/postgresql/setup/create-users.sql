@@ -124,7 +124,7 @@ END
 $$;
 
 -- Grant read-only access to future tables (idempotent)
-ALTER DEFAULT PRIVILEGES IN SCHEMA public
+ALTER DEFAULT PRIVILEGES FOR USER shortener_user IN SCHEMA public
 GRANT SELECT ON TABLES TO redirect_user;
 
 -- Display completion message
