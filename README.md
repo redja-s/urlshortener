@@ -46,3 +46,8 @@ kubectl create secret generic redirect-service-db-secret \
 #### (6) Deploy redirect-service 
 
 1. `helm upgrade --install redirect-service redirect-service/helm -f minikube-setup/values.yml --namespace dev`
+
+#### (7) Install Kong (API Gateway)
+
+1. `helm repo add kong https://charts.konghq.com && helm report update`
+2. `helm install kong kong/kong --namespace kong --create-namespace --set ingressController.installCRDs=false --set admin.enabled=true`

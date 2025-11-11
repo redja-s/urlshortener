@@ -1,0 +1,33 @@
+apiVersion: configuration.konghq.com/v1
+kind: KongService
+metadata:
+  name: url-shortener-service
+  namespace: {{ .Values.global.serviceNamespace }}
+  annotations:
+    kubernetes.io/ingress.class: kong
+spec:
+  host: url-shortener-service.{{ .Values.global.serviceNamespace }}.svc.cluster.local
+  port: 8080
+  protocol: http
+  path: /
+  retries: 3
+  connect_timeout: 60000
+  write_timeout: 60000
+  read_timeout: 60000
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongService
+metadata:
+  name: redirect-service
+  namespace: {{ .Values.global.serviceNamespace }}
+  annotations:
+    kubernetes.io/ingress.class: kong
+spec:
+  host: redirect-service-service.{{ .Values.global.serviceNamespace }}.svc.cluster.local
+  port: 8081
+  protocol: http
+  path: /
+  retries: 5
+  connect_timeout: 30000
+  write_timeout: 30000
+  read_timeout: 30000

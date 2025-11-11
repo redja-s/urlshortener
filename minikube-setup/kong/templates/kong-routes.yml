@@ -1,0 +1,55 @@
+---
+# Route for URL Shortener API
+apiVersion: configuration.konghq.com/v1
+kind: KongRoute
+metadata:
+  name: url-shortener-api-route
+  namespace: {{ .Values.global.serviceNamespace }}
+  annotations:
+    konghq.com/strip-path: "true"
+    konghq.com/preserve-host: "false"
+    konghq.com/plugins: |
+      rate-limiting-api,
+      request-transformer-api,
+      cors-api,
+      prometheus-api
+spec:
+  service:
+    name: url-shortener-service
+  protocols:
+    - http
+    - https
+  methods:
+    - GET
+    - POST
+    - PUT
+    - DELETE
+  paths:
+    - /api
+  strip_path: true
+---
+# Route for Redirect Service (short codes)
+apiVersion: configuration.konghq.com/v1
+kind: KongRoute
+metadata:
+  name: redirect-route
+  namespace: {{ .Values.global.serviceNamespace }}
+  annotations:
+    konghq.com/strip-path: "false"
+    konghq.com/preserve-host: "false"
+    konghq.com/plugins: |
+      rate-limiting-redirect,
+      proxy-cache-redirect,
+      prometheus-redirect
+spec:
+  service:
+    name: redirect-service
+  protocols:
+    - http
+    - https
+  methods:
+    - GET
+  paths:
+    - ~/^/[a-zA-Z0-9]{6,}$
+  strip_path: false
+  regex_priority: 100

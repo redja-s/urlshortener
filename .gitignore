@@ -40,6 +40,4 @@ bin/
 ### VS Code ###
 **/.vscode/
 
-kong/
-
 .DS_Store

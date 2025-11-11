@@ -1,0 +1,36 @@
+---
+# Consumer for API Key Authentication
+apiVersion: configuration.konghq.com/v1
+kind: KongConsumer
+metadata:
+  name: admin-user
+  namespace: {{ .Values.global.serviceNamespace }}
+  annotations:
+    kubernetes.io/ingress.class: kong
+username: admin
+custom_id: "admin-001"
+---
+# Key Auth Plugin
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: key-auth-api
+  namespace: {{ .Values.global.serviceNamespace }}
+config:
+  key_names:
+    - apikey
+    - X-API-Key
+  key_in_body: false
+  hide_credentials: true
+plugin: key-auth
+---
+# API Key Credential for admin-user
+apiVersion: configuration.konghq.com/v1
+kind: KongCredential
+metadata:
+  name: admin-api-key
+  namespace: {{ .Values.global.serviceNamespace }}
+consumerRef: admin-user
+type: key-auth
+config:
+  key: "super-secret-api-key-12345"

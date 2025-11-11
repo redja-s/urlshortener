@@ -1,0 +1,41 @@
+{{- if and .Values.ingress.enabled (eq .Values.ingress.type "kong") }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: url-shortener-kong-ingress
+  namespace: {{ .Values.global.serviceNamespace }}
+  annotations:
+    konghq.com/strip-path: "true"
+    konghq.com/plugins: rate-limiting, request-transformer
+spec:
+  ingressClassName: kong
+  rules:
+  - host: {{ .Values.ingress.host }}
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: url-shortener-service
+            port:
+              number: 8080
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: redirect-service-service
+            port:
+              number: 8081
+---
+# Rate Limiting Plugin
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: rate-limiting
+  namespace: {{ .Values.global.serviceNamespace }}
+config:
+  minute: 100
+  policy: local
+plugin: rate-limiting
+{{- end }}

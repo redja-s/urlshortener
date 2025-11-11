@@ -188,3 +188,53 @@ redis:
     limits:
       memory: "256Mi"
       cpu: "500m"
+
+######################################################
+# Kong Configuration
+######################################################
+kong:
+  enabled: true
+  
+  # Use external PostgreSQL
+  env:
+    database: postgres
+    pg_host: postgres-service.postgres.svc.cluster.local
+    pg_port: 5432
+    pg_user: kong_user
+    pg_password: kong_secure_password
+    pg_database: kong
+  
+  # Ingress Controller
+  ingressController:
+    enabled: true
+    installCRDs: true
+  
+  # Admin API
+  admin:
+    enabled: true
+    type: ClusterIP
+    http:
+      enabled: true
+      servicePort: 8001
+  
+  # Proxy
+  proxy:
+    enabled: true
+    type: NodePort
+    http:
+      enabled: true
+      servicePort: 80
+      containerPort: 8000
+      nodePort: 30080
+  
+  # Disable bundled PostgreSQL
+  postgresql:
+    enabled: false
+  
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
