@@ -36,3 +36,13 @@ kubectl create secret generic redirect-service-db-secret \
 
 1. `kubectl create namespace dev`
 2. `helm upgrade --install url-shortener-service url-shortener-service/helm -f minikube-setup/values.yml --namespace dev`
+
+
+#### (5) Deploy redis
+
+1. `kubectl create namespace redis`
+2. `helm upgrade --install redis minikube-setup/redis -f minikube-setup/values.yml --namespace redis`
+
+#### (6) Deploy redirect-service 
+
+1. `helm upgrade --install redirect-service redirect-service/helm -f minikube-setup/values.yml --namespace dev`

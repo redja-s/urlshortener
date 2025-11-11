@@ -1,3 +1,6 @@
+######################################################
+########### GLOBAL SETTINGS ###############################
+######################################################
 global:
   serviceNamespace: dev
   defaultRootLoggingLevel: INFO
@@ -28,6 +31,9 @@ global:
     periodSeconds: 5
     failureThreshold: 12
 
+######################################################
+########### URL SHORTENER SERVICE SETTINGS ###################
+######################################################
 urlShortener:
   enabled: true
   name: url-shortener
@@ -64,7 +70,50 @@ urlShortener:
     jpa:
       hibernateDdlAuto: update
 
-# PostgreSQL configuration
+######################################################
+###################### REDIRECT SERVICE SETTINGS ###################
+######################################################
+redirect:
+  enabled: true
+  name: redirect
+  replicaCount: 2
+
+  redis:
+    host: redis-service.redis.svc.cluster.local
+    port: 6379
+
+  secrets:
+    database: redirect-service-db-secret
+
+  logging:
+    level:
+      app: ""  # Will use global.defaultAppLoggingLevel
+
+  image:
+    repository: redirect-service
+    tag: latest
+    pullPolicy: Never  # Use IfNotPresent for registry images
+  
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  
+  # Spring Boot configuration
+  springBoot:
+    profiles: prod
+
+######################################################
+######################################################
+######################################################
 postgresql:
   enabled: true
   namespace: postgres
@@ -94,3 +143,48 @@ postgresql:
   
   service:
     port: 5432
+
+######################################################
+# Redis Configuration
+######################################################
+redis:
+  enabled: true
+  name: redis
+  namespace: redis
+  replicaCount: 1
+  
+  image:
+    repository: redis
+    tag: "7.2-alpine"
+    pullPolicy: IfNotPresent
+  
+  port: 6379
+  
+  service:
+    name: redis-service
+    type: ClusterIP
+  
+  auth:
+    enabled: false  # Set to true for production
+    password: "redispassword"    # Only used if auth.enabled = true
+  
+  config:
+    loglevel: notice
+    databases: 16
+    maxmemory: 256mb
+    maxmemoryPolicy: allkeys-lru
+  
+  persistence:
+    enabled: true
+    size: 1Gi
+    storageClass: standard
+    accessModes:
+      - ReadWriteOnce
+  
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "500m"

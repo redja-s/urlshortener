@@ -1,0 +1,116 @@
+{{- if .Values.redirect.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.redirect.name }}
+  namespace: {{ .Values.global.serviceNamespace }}
+  labels:
+    app: {{ .Values.redirect.name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+    component: redirect
+spec:
+  replicas: {{ .Values.redirect.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.redirect.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.redirect.name }}
+        component: redirect
+    spec:
+      containers:
+      - name: {{ .Values.redirect.name }}
+        image: {{ .Values.redirect.image.repository }}:{{ .Values.redirect.image.tag }}
+        imagePullPolicy: {{ .Values.redirect.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.redirect.service.targetPort }}
+          name: http
+          protocol: TCP
+        
+        env:
+        # Database Configuration (Read-Only)
+        - name: SPRING_DATASOURCE_URL
+          value: {{ .Values.global.db.urlShortenerValue }}
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.redirect.secrets.database }}
+              key: username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.redirect.secrets.database }}
+              key: password
+        
+        # Redis Configuration
+        - name: SPRING_DATA_REDIS_HOST
+          value: {{ .Values.redirect.redis.host }}
+        - name: SPRING_DATA_REDIS_PORT
+          value: {{ .Values.redirect.redis.port | quote }}
+        {{- if .Values.redirect.redis.password }}
+        - name: SPRING_DATA_REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.redirect.secrets.redis }}
+              key: password
+        {{- end }}
+        
+        # JPA Configuration (Read-Only - No DDL)
+        - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+          value: "none"
+        - name: SPRING_JPA_OPEN_IN_VIEW
+          value: "false"
+        - name: SPRING_JPA_SHOW_SQL
+          value: "false"
+        
+        # Spring Boot Profiles
+        - name: SPRING_PROFILES_ACTIVE
+          value: {{ .Values.redirect.springBoot.profiles }}
+        
+        # Logging Configuration
+        - name: LOGGING_LEVEL_ROOT
+          value: {{ .Values.global.defaultRootLoggingLevel | default "INFO" }}
+        - name: LOGGING_LEVEL_APP
+          value: {{ coalesce .Values.redirect.logging.level.app .Values.global.defaultAppLoggingLevel "INFO" }}
+        - name: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB
+          value: {{ .Values.redirect.logging.level.web | default "INFO" }}
+        
+        # Application-specific settings
+        - name: SERVER_PORT
+          value: {{ .Values.redirect.service.targetPort | quote }}
+        
+        resources:
+          {{- toYaml .Values.redirect.resources | nindent 10 }}
+        
+        {{- if .Values.global.startupProbe.enabled }}
+        startupProbe:
+          httpGet:
+            path: {{ .Values.global.startupProbe.path }}
+            port: {{ .Values.redirect.service.targetPort }}
+          initialDelaySeconds: {{ .Values.global.startupProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.global.startupProbe.periodSeconds }}
+          failureThreshold: {{ .Values.global.startupProbe.failureThreshold }}
+        {{- end }}
+        
+        {{- if .Values.global.livenessProbe.enabled }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.global.livenessProbe.path }}
+            port: {{ .Values.redirect.service.targetPort }}
+          initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.global.livenessProbe.periodSeconds }}
+          failureThreshold: {{ .Values.global.livenessProbe.failureThreshold }}
+        {{- end }}
+        
+        {{- if .Values.global.readinessProbe.enabled }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.global.readinessProbe.path }}
+            port: {{ .Values.redirect.service.targetPort }}
+          initialDelaySeconds: {{ .Values.global.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.global.readinessProbe.periodSeconds }}
+          failureThreshold: {{ .Values.global.readinessProbe.failureThreshold }}
+        {{- end }}
+{{- end }}

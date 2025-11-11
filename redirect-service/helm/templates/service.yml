@@ -1,0 +1,25 @@
+{{- if .Values.redirect.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.redirect.name }}-service
+  namespace: {{ .Values.global.serviceNamespace }}
+  labels:
+    app: {{ .Values.redirect.name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+    component: redirect
+spec:
+  type: {{ .Values.redirect.service.type }}
+  selector:
+    app: {{ .Values.redirect.name }}
+  ports:
+  - name: http
+    port: {{ .Values.redirect.service.port }}
+    targetPort: {{ .Values.redirect.service.targetPort }}
+    protocol: TCP
+    {{- if and (eq .Values.redirect.service.type "NodePort") .Values.redirect.service.nodePort }}
+    nodePort: {{ .Values.redirect.service.nodePort }}
+    {{- end }}
+  sessionAffinity: None
+{{- end }}
