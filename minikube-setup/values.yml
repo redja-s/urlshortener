@@ -190,51 +190,72 @@ redis:
       cpu: "500m"
 
 ######################################################
-# Kong Configuration
+# Nginx Configuration
 ######################################################
-kong:
+ingress:
   enabled: true
+  className: nginx
   
-  # Use external PostgreSQL
-  env:
-    database: postgres
-    pg_host: postgres-service.postgres.svc.cluster.local
-    pg_port: 5432
-    pg_user: kong_user
-    pg_password: kong_secure_password
-    pg_database: kong
+  # Hosts
+  hosts:
+    - host: url-shortener.local
+      paths:
+        # URL Shortener API paths
+        - path: /api
+          pathType: Prefix
+          service: url-shortener-service
+          port: 8080
+        
+        # Redirect service (catch-all for short codes)
+        - path: /
+          pathType: Prefix
+          service: redirect-service-service
+          port: 8081
   
-  # Ingress Controller
-  ingressController:
-    enabled: true
-    installCRDs: true
-  
-  # Admin API
-  admin:
-    enabled: true
-    type: ClusterIP
-    http:
-      enabled: true
-      servicePort: 8001
-  
-  # Proxy
-  proxy:
-    enabled: true
-    type: NodePort
-    http:
-      enabled: true
-      servicePort: 80
-      containerPort: 8000
-      nodePort: 30080
-  
-  # Disable bundled PostgreSQL
-  postgresql:
+  # TLS configuration (optional)
+  tls:
     enabled: false
+    secretName: url-shortener-tls
   
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      cpu: 500m
-      memory: 512Mi
+  # Annotations for NGINX behavior
+  annotations:
+    # CORS
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    
+    # Timeouts
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    
+    # Rate limiting
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: "5"
+    
+    # Connection limits
+    nginx.ingress.kubernetes.io/limit-connections: "10"
+    
+    # Client body size
+    nginx.ingress.kubernetes.io/proxy-body-size: "1m"
+    
+    # SSL redirect (disable for local dev)
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    
+    # Custom error pages
+    nginx.ingress.kubernetes.io/custom-http-errors: "404,500,502,503"
+    
+    # Rewrite rules (preserve original path)
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
+
+# Service configurations
+services:
+  urlShortener:
+    name: url-shortener-service
+    port: 8080
+  
+  redirect:
+    name: redirect-service
+    port: 8081

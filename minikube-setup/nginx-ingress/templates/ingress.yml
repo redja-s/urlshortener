@@ -1,0 +1,111 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: url-shortener-ingress
+  namespace: {{ .Values.global.serviceNamespace }}
+  labels:
+    app: url-shortener
+    component: ingress
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+  annotations:
+    {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+  {{- range .Values.ingress.hosts }}
+  - hosts:
+    - {{ .host }}
+    secretName: {{ $.Values.ingress.tls.secretName }}
+  {{- end }}
+  {{- end }}
+  
+  rules:
+  {{- range .Values.ingress.hosts }}
+  - host: {{ .host }}
+    http:
+      paths:
+      
+      # ============================================
+      # URL SHORTENER API ROUTES (Higher Priority)
+      # ============================================
+      
+      # POST /api/shorten - Create short URL
+      - path: /api/shorten
+        pathType: Exact
+        backend:
+          service:
+            name: {{ $.Values.services.urlShortener.name }}
+            port:
+              number: {{ $.Values.services.urlShortener.port }}
+      
+      # GET /api/urls - List all URLs (with pagination)
+      - path: /api/urls
+        pathType: Exact
+        backend:
+          service:
+            name: {{ $.Values.services.urlShortener.name }}
+            port:
+              number: {{ $.Values.services.urlShortener.port }}
+      
+      # GET /api/urls/{id} - Get specific URL
+      - path: /api/urls/(.+)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: {{ $.Values.services.urlShortener.name }}
+            port:
+              number: {{ $.Values.services.urlShortener.port }}
+      
+      # PUT /api/urls/{id} - Update URL
+      # DELETE /api/urls/{id} - Delete URL
+      # (Same path as above, different HTTP methods)
+      
+      # Health checks for url-shortener
+      - path: /api/health
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ $.Values.services.urlShortener.name }}
+            port:
+              number: {{ $.Values.services.urlShortener.port }}
+      
+      # Actuator endpoints (Spring Boot)
+      - path: /api/actuator
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ $.Values.services.urlShortener.name }}
+            port:
+              number: {{ $.Values.services.urlShortener.port }}
+      
+      # ============================================
+      # REDIRECT SERVICE ROUTES (Lower Priority)
+      # ============================================
+      
+      # Health check for redirect service
+      - path: /redirect/health
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ $.Values.services.redirect.name }}
+            port:
+              number: {{ $.Values.services.redirect.port }}
+      
+      # /{shortCode} - Redirect to long URL
+      # This should be LAST (catch-all)
+      # Matches 6+ alphanumeric characters
+      - path: /([a-zA-Z0-9]{6,})
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: {{ $.Values.services.redirect.name }}
+            port:
+              number: {{ $.Values.services.redirect.port }}
+  
+  {{- end }}
+{{- end }}
