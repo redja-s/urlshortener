@@ -1,0 +1,83 @@
+{{- if .Values.ingress.enabled }}
+---
+# Ingress for URL Shortener Service (API endpoints)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: url-shortener-api-ingress
+  namespace: {{ .Values.global.serviceNamespace }}
+  labels:
+    app: url-shortener
+    component: api-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/proxy-body-size: "1m"
+    # Rate limiting for API
+    nginx.ingress.kubernetes.io/limit-rps: "10"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: url-shortener.local
+    http:
+      paths:
+      # POST /api/shorten - Create short URL
+      - path: /api/shorten
+        pathType: Exact
+        backend:
+          service:
+            name: url-shortener-service
+            port:
+              number: 8080
+      
+      # GET /api/shorten/{shortUrl} - Get short URL details
+      # DELETE /api/shorten/{shortCode} - Delete short URL
+      - path: /api/shorten/
+        pathType: Prefix
+        backend:
+          service:
+            name: url-shortener-service
+            port:
+              number: 8080
+      
+      # Health check and actuator endpoints
+      - path: /api/actuator
+        pathType: Prefix
+        backend:
+          service:
+            name: url-shortener-service
+            port:
+              number: 8080
+
+---
+# Ingress for Redirect Service (short code redirects)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: url-shortener-redirect-ingress
+  namespace: {{ .Values.global.serviceNamespace }}
+  labels:
+    app: url-shortener
+    component: redirect-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    # Higher rate limit for redirects
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: url-shortener.local
+    http:
+      paths:
+      # GET /{shortCode} - Redirect to long URL
+      # Matches 6+ alphanumeric characters (but NOT /api/*)
+      - path: /([a-zA-Z0-9]{6,})
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: redirect-service-service
+            port:
+              number: 8081
+{{- end }}

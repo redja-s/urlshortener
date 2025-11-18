@@ -17,14 +17,15 @@ All commands below assume the user is on the root directory
 
 #### (3) Prepare secrets for services
 
-1. Create secret for url-shortener
+1. `kubectl create namespace dev`
+2. Create secret for url-shortener
 ```bash
 kubectl create secret generic url-shortener-service-db-secret \
   --from-literal=username=shortener_user \
   --from-literal=password=shortener_secure_password \
   --namespace dev
 ```
-2. Create secret for redirect-service
+3. Create secret for redirect-service
 ```bash
 kubectl create secret generic redirect-service-db-secret \
   --from-literal=username=redirect_user \
@@ -32,22 +33,31 @@ kubectl create secret generic redirect-service-db-secret \
   --namespace dev
 ```
 
-#### (4) Deploy url-shortener-service
+#### (4) Build container images
 
-1. `kubectl create namespace dev`
+1. `eval $(minikube docker-env)`
+
+2. ` docker build -t url-shortener:latest url-shortener-service/`
+
+3. `docker build -t redirect-service:latest redirect-service/`
+
+4. `exit`
+
+#### (5) Deploy url-shortener-service
+
+1. If not created - `kubectl create namespace dev`
 2. `helm upgrade --install url-shortener-service url-shortener-service/helm -f minikube-setup/values.yml --namespace dev`
 
 
-#### (5) Deploy redis
+#### (6) Deploy redis
 
 1. `kubectl create namespace redis`
 2. `helm upgrade --install redis minikube-setup/redis -f minikube-setup/values.yml --namespace redis`
 
-#### (6) Deploy redirect-service 
+#### (7) Deploy redirect-service 
 
 1. `helm upgrade --install redirect-service redirect-service/helm -f minikube-setup/values.yml --namespace dev`
 
-#### (7) Install Kong (API Gateway)
+#### (8) Install Nginx Ingress
 
-1. `helm repo add kong https://charts.konghq.com && helm report update`
-2. `helm install kong kong/kong --namespace kong --create-namespace --set ingressController.installCRDs=false --set admin.enabled=true`
+1. `helm upgrade --install ingress-nginx minikube-setup/ingress-nginx -f minikube-setup/values.yml --namespace ingress-nginx`
