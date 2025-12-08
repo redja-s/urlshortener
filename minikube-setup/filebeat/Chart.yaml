@@ -1,0 +1,10 @@
+apiVersion: v2
+name: filebeat
+description: Filebeat for collecting logs from Kubernetes pods
+type: application
+version: 0.1.0
+appVersion: "8.11.0"
+keywords:
+  - filebeat
+  - log-collection
+  - beats

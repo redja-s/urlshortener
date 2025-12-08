@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-config
+  namespace: {{ .Values.logstash.namespace }}
+  labels:
+    app: {{ .Values.logstash.name }}
+data:
+  logstash.yml: |
+    http.host: "0.0.0.0"
+    path.config: /usr/share/logstash/pipeline
+    xpack.monitoring.enabled: false
+
+  logstash.conf: |
+    input {
+      beats {
+        port => 5044
+      }
+    }
+
+    filter {
+      # Parse JSON logs from container
+      if [message] =~ /^\{.*\}$/ {
+        json {
+          source => "message"
+          target => "json_data"
+        }
+      }
+
+      # Add custom fields
+      mutate {
+        add_field => {
+          "environment" => "minikube"
+        }
+      }
+      
+      # Only add application field if kubernetes metadata exists
+      if [kubernetes][container][name] {
+        mutate {
+          add_field => {
+            "application" => "%{[kubernetes][container][name]}"
+          }
+        }
+      }
+      
+      # Set default namespace if missing
+      if ![kubernetes][namespace] {
+        mutate {
+          add_field => { "[kubernetes][namespace]" => "unknown" }
+        }
+      }
+    }
+
+    output {
+      elasticsearch {
+        hosts => ["{{ .Values.logstash.elasticsearch.host }}:{{ .Values.logstash.elasticsearch.port }}"]
+        index => "logs-%{[kubernetes][namespace]}-%{+YYYY.MM.dd}"
+        # Use data streams for better handling
+        action => "create"
+      }
+
+      stdout {
+        codec => rubydebug
+      }
+    }

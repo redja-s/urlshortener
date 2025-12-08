@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.elasticsearch.name }}
+  namespace: {{ .Values.elasticsearch.namespace }}
+  labels:
+    app: {{ .Values.elasticsearch.name }}
+    component: elasticsearch
+spec:
+  serviceName: {{ .Values.elasticsearch.service.name }}
+  replicas: {{ .Values.elasticsearch.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.elasticsearch.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.elasticsearch.name }}
+        component: elasticsearch
+    spec:
+      initContainers:
+      # Fix permissions
+      - name: fix-permissions
+        image: busybox
+        command: ['sh', '-c', 'chown -R 1000:1000 /usr/share/elasticsearch/data']
+        volumeMounts:
+        - name: data
+          mountPath: /usr/share/elasticsearch/data
+      # Increase vm.max_map_count
+      - name: increase-vm-max-map
+        image: busybox
+        command: ['sysctl', '-w', 'vm.max_map_count=262144']
+        securityContext:
+          privileged: true
+      
+      containers:
+      - name: elasticsearch
+        image: {{ .Values.elasticsearch.image.repository }}:{{ .Values.elasticsearch.image.tag }}
+        imagePullPolicy: {{ .Values.elasticsearch.image.pullPolicy }}
+        ports:
+        - containerPort: 9200
+          name: http
+        - containerPort: 9300
+          name: transport
+        env:
+        - name: cluster.name
+          value: {{ .Values.elasticsearch.env.clusterName }}
+        - name: node.name
+          value: {{ .Values.elasticsearch.env.nodeName }}
+        - name: discovery.type
+          value: {{ .Values.elasticsearch.env.discoveryType }}
+        - name: xpack.security.enabled
+          value: "{{ .Values.elasticsearch.env.xpackSecurityEnabled }}"
+        - name: ES_JAVA_OPTS
+          value: {{ .Values.elasticsearch.env.esJavaOpts }}
+        
+        resources:
+          {{- toYaml .Values.elasticsearch.resources | nindent 10 }}
+        
+        volumeMounts:
+        - name: data
+          mountPath: /usr/share/elasticsearch/data
+        
+        readinessProbe:
+          httpGet:
+            path: /_cluster/health
+            port: 9200
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        
+        livenessProbe:
+          httpGet:
+            path: /_cluster/health
+            port: 9200
+          initialDelaySeconds: 60
+          periodSeconds: 30
+
+  {{- if .Values.elasticsearch.persistence.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: {{ .Values.elasticsearch.persistence.accessModes }}
+      storageClassName: {{ .Values.elasticsearch.persistence.storageClass }}
+      resources:
+        requests:
+          storage: {{ .Values.elasticsearch.persistence.size }}
+  {{- end }}

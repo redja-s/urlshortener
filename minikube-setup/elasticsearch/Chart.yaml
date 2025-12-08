@@ -1,0 +1,11 @@
+apiVersion: v2
+name: elasticsearch
+description: Elasticsearch for log storage and indexing
+type: application
+version: 0.1.0
+appVersion: "9.0.0"
+keywords:
+  - elasticsearch
+  - logging
+  - storage
+  - indexing

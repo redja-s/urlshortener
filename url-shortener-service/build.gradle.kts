@@ -55,6 +55,9 @@ dependencies {
 
 	// Health check for Spring Boot
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
+
+	// Logstash
+	implementation("net.logstash.logback:logstash-logback-encoder:9.0")
 }
 
 tasks.withType<Test> {

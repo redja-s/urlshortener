@@ -37,7 +37,7 @@ global:
 urlShortener:
   enabled: true
   name: url-shortener
-  replicaCount: 2
+  replicaCount: 1
 
   secrets:
     database: url-shortener-service-db-secret
@@ -76,7 +76,7 @@ urlShortener:
 redirect:
   enabled: true
   name: redirect
-  replicaCount: 2
+  replicaCount: 1
 
   redis:
     host: redis-service.redis.svc.cluster.local
@@ -259,3 +259,136 @@ services:
   redirect:
     name: redirect-service
     port: 8081
+
+######################################################
+# Elasticsearch Configuration
+######################################################
+elasticsearch:
+  enabled: true
+  name: elasticsearch
+  namespace: elk
+  replicaCount: 1
+
+  image:
+    repository: docker.elastic.co/elasticsearch/elasticsearch
+    tag: "8.11.0"
+    pullPolicy: IfNotPresent
+
+  service:
+    name: elasticsearch-service
+    type: ClusterIP
+    port: 9200
+    targetPort: 9200
+
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: standard
+    accessModes:
+      - ReadWriteOnce
+
+  env:
+    clusterName: "url-shortener-logs"
+    nodeName: "elasticsearch-0"
+    # Disable security for dev (not for production!)
+    xpackSecurityEnabled: "false"
+    discoveryType: "single-node"
+    esJavaOpts: "-Xms512m -Xmx512m"
+
+######################################################
+# Logstash Configuration
+######################################################
+logstash:
+  enabled: true
+  name: logstash
+  namespace: elk
+  replicaCount: 1
+
+  image:
+    repository: docker.elastic.co/logstash/logstash
+    tag: "8.11.0"
+    pullPolicy: IfNotPresent
+
+  service:
+    name: logstash-service
+    type: ClusterIP
+    port: 5044
+    targetPort: 5044
+
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+  elasticsearch:
+    host: elasticsearch-service.elk.svc.cluster.local
+    port: 9200
+
+######################################################
+# Kibana Configuration
+######################################################
+kibana:
+  enabled: true
+  name: kibana
+  namespace: elk
+  replicaCount: 1
+
+  image:
+    repository: docker.elastic.co/kibana/kibana
+    tag: "8.11.0"
+    pullPolicy: IfNotPresent
+
+  service:
+    name: kibana-service
+    type: NodePort
+    port: 5601
+    targetPort: 5601
+    nodePort: 30561
+
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+  elasticsearch:
+    host: elasticsearch-service.elk.svc.cluster.local
+    port: 9200
+
+######################################################
+# Filebeat Configuration
+######################################################
+filebeat:
+  enabled: true
+  name: filebeat
+  namespace: elk
+
+  image:
+    repository: docker.elastic.co/beats/filebeat
+    tag: "8.11.0"
+    pullPolicy: IfNotPresent
+
+  resources:
+    requests:
+      memory: "200Mi"
+      cpu: "100m"
+    limits:
+      memory: "400Mi"
+      cpu: "200m"
+
+  logstash:
+    host: logstash-service.elk.svc.cluster.local
+    port: 5044

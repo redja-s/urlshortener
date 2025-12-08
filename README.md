@@ -61,3 +61,13 @@ kubectl create secret generic redirect-service-db-secret \
 #### (8) Install Nginx Ingress
 
 1. `helm upgrade --install ingress-nginx minikube-setup/ingress-nginx -f minikube-setup/values.yml --namespace ingress-nginx`
+
+#### (9) Install ELK Stack for monitoring
+
+1. Deploy Elasticsearch: `helm upgrade --install elasticsearch minikube-setup/elasticsearch --namespace elk -f minikube-setup/values.yml`
+2. Check Elasticsearch pods are healthy
+3. Deploy Logstash: `helm upgrade --install logstash minikube-setup/logstash --namespace elk -f minikube-setup/values.yml`
+4. Check logstash is healthy
+5. Deploy Kibana: `helm upgrade --install kibana minikube-setup/kibana --namespace elk -f minikube-setup/values.yml`
+6. Check Kibana is healthy
+7. Deploy Filebeat: `helm upgrade --install filebeat minikube-setup/filebeat --namespace elk -f minikube-setup/values.yml`
