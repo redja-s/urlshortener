@@ -7,7 +7,7 @@ global:
   defaultAppLoggingLevel: INFO
 
   db:
-    urlShortenerValue: "jdbc:postgresql://postgres-service.postgres.svc.cluster.local:5432/urlshortener"
+    urlShortenerValue: "jdbc:postgresql://postgres-service.postgres.svc.cluster.local:5432/urls"
 
   # Health checks
   livenessProbe:
@@ -30,6 +30,12 @@ global:
     initialDelaySeconds: 10
     periodSeconds: 5
     failureThreshold: 12
+
+######################################################
+########### ISTIO Settings ###################
+######################################################
+istio:
+  enabled: true
 
 ######################################################
 ########### URL SHORTENER SERVICE SETTINGS ###################
@@ -112,7 +118,7 @@ redirect:
     profiles: prod
 
 ######################################################
-######################################################
+###################### POSTGRES SETTINGS ###################
 ######################################################
 postgresql:
   enabled: true
@@ -124,7 +130,7 @@ postgresql:
     pullPolicy: IfNotPresent
   
   auth:
-    database: urlshortener
+    database: urls
     username: postgres
     password: postgres
   
@@ -145,7 +151,7 @@ postgresql:
     port: 5432
 
 ######################################################
-# Redis Configuration
+###################### REDIS SETTINGS ###################
 ######################################################
 redis:
   enabled: true
@@ -159,10 +165,6 @@ redis:
     pullPolicy: IfNotPresent
   
   port: 6379
-  
-  service:
-    name: redis-service
-    type: ClusterIP
   
   auth:
     enabled: false  # Set to true for production
@@ -188,77 +190,6 @@ redis:
     limits:
       memory: "256Mi"
       cpu: "500m"
-
-######################################################
-# Nginx Configuration
-######################################################
-ingress:
-  enabled: true
-  className: nginx
-  
-  # Hosts
-  hosts:
-    - host: url-shortener.local
-      paths:
-        # URL Shortener API paths
-        - path: /api
-          pathType: Prefix
-          service: url-shortener-service
-          port: 8080
-        
-        # Redirect service (catch-all for short codes)
-        - path: /
-          pathType: Prefix
-          service: redirect-service-service
-          port: 8081
-  
-  # TLS configuration (optional)
-  tls:
-    enabled: false
-    secretName: url-shortener-tls
-  
-  # Annotations for NGINX behavior
-  annotations:
-    # CORS
-    nginx.ingress.kubernetes.io/enable-cors: "true"
-    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
-    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
-    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
-    
-    # Timeouts
-    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
-    
-    # Rate limiting
-    nginx.ingress.kubernetes.io/limit-rps: "100"
-    nginx.ingress.kubernetes.io/limit-burst-multiplier: "5"
-    
-    # Connection limits
-    nginx.ingress.kubernetes.io/limit-connections: "10"
-    
-    # Client body size
-    nginx.ingress.kubernetes.io/proxy-body-size: "1m"
-    
-    # SSL redirect (disable for local dev)
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    
-    # Custom error pages
-    nginx.ingress.kubernetes.io/custom-http-errors: "404,500,502,503"
-    
-    # Rewrite rules (preserve original path)
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
-    nginx.ingress.kubernetes.io/use-regex: "true"
-
-# Service configurations
-services:
-  urlShortener:
-    name: url-shortener-service
-    port: 8080
-  
-  redirect:
-    name: redirect-service
-    port: 8081
 
 ######################################################
 # Elasticsearch Configuration

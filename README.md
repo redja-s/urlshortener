@@ -9,23 +9,23 @@ All commands below assume the user is on the root directory
 #### (1) Deploy Postgresql
 
 1. (Optional) Render & validate postgresql: `helm template minikube-setup/postgresql -f values.yml`
-2. Deploy postgres into minikube: ` helm upgrade --install postgres minikube-setup/postgresql -f minikube-setup/values.yml --namespace postgres`
+2. Create namespace: `kubectl create ns postgres`
+3. Deploy postgres into minikube: `helm upgrade --install postgres minikube-setup/postgresql -f minikube-setup/values.yml --namespace postgres`
 
 #### (2) Create database + users
 
-1. Run the setup SQL file onto the postgres pod: `kubectl exec -i postgres-0 -n postgres -- psql -U postgres -d urlshortener < ./minikube-setup//postgresql/setup/create-users.sql`
+1. Run the setup SQL file onto the postgres pod: `kubectl exec -i postgres-0 -n postgres -- psql -U postgres -d urls < ./minikube-setup/postgresql/setup/create-users.sql`
 
 #### (3) Prepare secrets for services
 
-1. `kubectl create namespace dev`
-2. Create secret for url-shortener
+1. Create secret for url-shortener
 ```bash
 kubectl create secret generic url-shortener-service-db-secret \
-  --from-literal=username=shortener_user \
-  --from-literal=password=shortener_secure_password \
+  --from-literal=username=url_shortener_user \
+  --from-literal=password=url_shortener_secure_password \
   --namespace dev
 ```
-3. Create secret for redirect-service
+2. Create secret for redirect-service
 ```bash
 kubectl create secret generic redirect-service-db-secret \
   --from-literal=username=redirect_user \
@@ -35,19 +35,29 @@ kubectl create secret generic redirect-service-db-secret \
 
 #### (4) Build container images
 
-1. `eval $(minikube docker-env)`
+1. `docker build -t url-shortener:latest url-shortener-service/`
 
-2. ` docker build -t url-shortener:latest url-shortener-service/`
+2. `docker build -t redirect-service:latest redirect-service/`
 
-3. `docker build -t redirect-service:latest redirect-service/`
+3. `minikube image load url-shortener:latest`
 
-4. `exit`
+#### (5) Deploy Istio
+
+1. Install gateway CRDs
+```
+kubectl get crd gateways.gateway.networking.k8s.io &> /dev/null || \
+{ kubectl kustomize "github.com/kubernetes-sigs/gateway-api/config/crd?ref=v1.4.0" | kubectl apply -f -; }
+```
+
+2. Install Istio on the cluster
+```
+istioctl install --set profile=minimal -y
+```
 
 #### (5) Deploy url-shortener-service
 
 1. If not created - `kubectl create namespace dev`
 2. `helm upgrade --install url-shortener-service url-shortener-service/helm -f minikube-setup/values.yml --namespace dev`
-
 
 #### (6) Deploy redis
 
